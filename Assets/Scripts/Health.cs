@@ -31,13 +31,9 @@ public class Health : MonoBehaviour
         }
     }
     
-    public void CmdModifyHealth(float healthChange)
+    public void ModifyHealth(float healthChange)
     {
         currentHealth += healthChange;
-
-        float currentHealthPercent = currentHealth / maxHealth;
-        GetComponentInChildren<Healthbar>().UpdateCurrentHealthPercent(currentHealthPercent);
-        
     }
 
     void Update()
@@ -56,15 +52,15 @@ public class Health : MonoBehaviour
     
     private void Death()
     {
-        Player[] playerList = FindObjectsByType<Player>();
-        foreach (Player p in playerList)
-        {
-            if (p.target == gameObject)
-            {
-                p.target = null;
-            }
-        }
-        GetListofPlayersInRange();
+        // Player[] playerList = FindObjectsByType<Player>();
+        // foreach (Player p in playerList)
+        // {
+        //     if (p.target == gameObject)
+        //     {
+        //         p.target = null;
+        //     }
+        // }
+        // GetListofPlayersInRange();
         //AwardExperience();
         gameObject.SetActive(false);
     }

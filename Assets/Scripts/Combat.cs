@@ -2,31 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using Unity.VisualScripting;
 
 public class Combat : MonoBehaviour
 {
-    private Player player;
-    // private NpcController npcController;
-
-    public GameObject target;
-
+    private UnitInfo unitInfo;
     [SerializeField]
-    private float baseAttackTime;
-
-    // public float baseAttackTime;
+    public float baseAttackTime;
     public float AttackAnimatorNormalizedTime;
-
     public float attackBackswing;
-
-    // public float damage;
-
     [SerializeField]
     public float attackRange;
-
     [SerializeField]
     private float damage;
-    public float distanceFromTarget;
-    public bool walking;
+    // public float distanceFromTarget;
     public bool isAttacking;
     private bool hasAnimator;
     public bool attackIsCanceled;
@@ -36,17 +25,15 @@ public class Combat : MonoBehaviour
     IEnumerator AttackCoroutine;
     [SerializeField]
     public float baseAttackRange;
-
+    public bool attackIsValid;
+    public float attackProgressInSeconds;
 
 
     // Start is called before the first frame update
     void Start()
     {
-        if (GetComponent<Player>())
-        {
-            player = GetComponent<Player>();
-            isPlayer = true;
-        }
+        unitInfo = GetComponent<UnitInfo>();
+        isPlayer = unitInfo;
         // if (GetComponent<NpcController>())
         // {
         //     npcController = GetComponent<NpcController>();
@@ -65,69 +52,33 @@ public class Combat : MonoBehaviour
     void Update()
     {
 
-        // //if (!isLocalPlayer)
-        // //    return;
+        if (isAttacking)
+        {
+            attackProgressInSeconds += Time.deltaTime;
+        }
+        else
+        {
+            attackProgressInSeconds = 0f;
+        }
+        if (isPlayer)
+        {
+            attackIsValid = CheckValidTarget(unitInfo.Target);        
+            if (attackIsValid)
+            {
+                StartAttack();
+            }
+        }
 
-        // if (isPlayer)
-        // {
-        //     distanceFromTarget = player.distanceFromTarget;
-        //     walking = player.walking;
-        //     target = player.target;
-        // }
-
-        // // if (!isPlayer)
-        // // {
-        // //     distanceFromTarget = npcController.distanceFromTarget;
-        // //     walking = npcController.walking;
-
-        // // }
-        // if (CheckValidTarget(target))
-        // {
-        //     StartAttack();
-        // }
-        // if (Input.GetKeyDown(KeyCode.S))
-        // {
-
-        //     //attackTimer += Time.deltaTime;
-
-        //     if (incrementAttackTimer)
-        //     {
-        //         attackTimer += Time.deltaTime;
-        //     }
-        // }
-        // timeSinceLastSuccessfulAttack += Time.deltaTime;
-
-
-
-        // if (isLocalPlayer && Input.GetKeyDown(KeyCode.S))
-        // {
-        //     //StopAttack();
-        //     StopAttackServer();
-        //     //StopAnimateAttack();
-        //     StopAnimateAttackServer();
-        // }
-        // if (isLocalPlayer && Input.GetKey(KeyCode.Q))
-        // {
-        //     ModifyAttackSpeed(momentumAttackSpeedValue);
-        //     CmdCalculateAttackSpeed();
-        //     CalculateAttackSpeed();
-
-
-        // }
         // if (hasAnimator)
         // {
         //     animator.SetFloat("speedMultiplier", attackspeed);
-        // }
-
-        // if (hasAnimator)
-        // {
         //     AttackAnimatorNormalizedTime = animator.GetCurrentAnimatorStateInfo(0).normalizedTime;
         // }
+
         // if (CheckValidTarget(target))
         // {
         //     BeginAnimatedAttack();
         //     //StartAttack();
-
         // }
         // if (AttackAnimatorNormalizedTime == baseAttackTime)
         // {
@@ -137,26 +88,9 @@ public class Combat : MonoBehaviour
         // {
         //     StopAttack();
         // }
-
-
-        // if (AttackAnimatorNormalizedTime == baseAttackTime)
-        // {
-        //     CmdModifyHealth(target, damage, 0f);
-        // }
-        // if (AttackAnimatorNormalizedTime == baseAttackTimeAndBackSwing)
-        // {
-        //     StopAttack();
-        // }
-
-
-
 
         // //CalculateAttackSpeed();
-
-
-
-
-
+        
         // if (shouldAnimateAttack)
         // {
         //     if (hasAnimator && !animator.GetBool("IsAttacking"))
@@ -218,12 +152,12 @@ public class Combat : MonoBehaviour
     private void StartAttack()
     {
 
-        // if (AttackCoroutine != null)
-        //     StopCoroutine(AttackCoroutine);
+        if (AttackCoroutine != null)
+            StopCoroutine(AttackCoroutine);
 
 
-        // AttackCoroutine = Attack();
-        // StartCoroutine(AttackCoroutine);
+        AttackCoroutine = Attack();
+        StartCoroutine(AttackCoroutine);
 
 
     }
@@ -235,46 +169,41 @@ public class Combat : MonoBehaviour
     }
     private bool CheckValidTarget(GameObject currentTarget)
     {
-        // bool TargetValid;
-        // if (currentTarget != null && distanceFromTarget < baseAttackRange && !isAttacking)
-        // {
+        bool TargetValid;
+        if (currentTarget != null && unitInfo.DistanceFromTarget < baseAttackRange && !isAttacking)
+        {
+            // if(name != "Art")
+            // {
+            //     Debug.Log(name + " Is attacking: " + isAttacking);
+            //     Debug.Log(name + " Target exists, close and not attacking");
+            //     Debug.Log(name + " Distance: " + unitInfo.DistanceFromTarget);
+            //     Debug.Log(name + " Base Range: " + baseAttackRange);
+            // }
+            TargetValid = true;
+        }
+        
+        else if (currentTarget != null && unitInfo.DistanceFromTarget < attackRange && isAttacking)
+        {
+            // Debug.Log(name + " Is attacking: " + isAttacking);
+            // Debug.Log(name + " Target exists, close and is attacking");
+            // Debug.Log(name + " Distance: " + unitInfo.DistanceFromTarget);
+            // Debug.Log(name + " Far Range: " + attackRange);
+            TargetValid = false;
+        }
 
-
-
-
-        //     TargetValid = true;
-
-
-
-        // }
-        // else if (currentTarget != null && distanceFromTarget < attackRange && isAttacking && timeSinceLastSuccessfulAttack > attackBackswing && attackFinished)
-        // {
-        //     if (isPlayer)
-        //     {
-        //         StopAttack();
-        //     }
-        //     else
-        //     {
-        //         NPCStopAttack();
-        //     }
-        //     TargetValid = false;
-
-        // }
-        // else if (currentTarget != null && distanceFromTarget < attackRange && isAttacking)
-        // {
-        //     TargetValid = false;
-        // }
-
-        // else if (currentTarget != null && distanceFromTarget > attackRange)
-        // {
-        //     if (hasAnimator)
-        //     {
-        //         animator.SetBool("IsAttacking", false);
-        //     }
-
-        //     isAttacking = false;
-        //     attackIsCanceled = true;
-        // }
+        else if (currentTarget != null && unitInfo.DistanceFromTarget > attackRange)
+        {
+            // if (hasAnimator)
+            // {
+            //     animator.SetBool("IsAttacking", false);
+            // }
+            // Debug.Log(name + " Target exists, too far");
+            // Debug.Log(name + " Distance: " + unitInfo.DistanceFromTarget);
+            // Debug.Log(name + " Far Range: " + attackRange);
+            isAttacking = false;
+            attackIsCanceled = true;
+            TargetValid = false;
+        }
         // else if (currentTarget != null && distanceFromTarget > attackRange)
         // {
         //     if (isPlayer && isAttacking)
@@ -286,48 +215,49 @@ public class Combat : MonoBehaviour
         //         NPCStopAttack();
         //     }
 
-        //     TargetValid = false;
         // }
-        // else if (target == null)
-        // {
+        else if (unitInfo.Target == null)
+        {
+            // if (hasAnimator)
+            // {
+            //     animator.SetBool("IsAttacking", false);
+            // }
+            // Debug.Log(name + " Target doesn't exist");
+            isAttacking = false;
+            attackIsCanceled = true;
+            TargetValid = false;
 
-        //     if (hasAnimator)
-        //     {
-        //         animator.SetBool("IsAttacking", false);
-        //     }
-        //     attackIsCanceled = true;
+            // if (isPlayer)
+            // {
+            //     StopAttack();
+            // }
+            // else
+            // {
+            //     NPCStopAttack();
+            // }
+        }
+        else
+        {
+            // Debug.Log(name + " unknown");
+            // Debug.Log(name + " Distance: " + unitInfo.DistanceFromTarget);
+            // Debug.Log(name + " Base Range: " + baseAttackRange);
+            // Debug.Log(name + " Is attacking: " + isAttacking);
+            // Debug.Log(name + " Far Range: " + attackRange);
+            TargetValid = false;
+        }
+        if (unitInfo.Walking)
+        {
 
-
-        //     if (isPlayer)
-        //     {
-
-        //         StopAttack();
-        //     }
-        //     else
-        //     {
-        //         NPCStopAttack();
-        //     }
-
-        //     TargetValid = false;
-        // }
-        // else
-        // {
-        //     TargetValid = false;
-        // }
-        // if (walking)
-        // {
-
-        //     if (hasAnimator)
-        //     {
-        //         animator.SetBool("IsAttacking", false);
-        //     }
-        //     attackIsCanceled = true;
-
-        //     TargetValid = false;
-
-        // }
-        // return TargetValid;
-        return false;
+            // if (hasAnimator)
+            // {
+            //     animator.SetBool("IsAttacking", false);
+            // }
+            // Debug.Log(name + " Walking");
+            isAttacking = false;
+            attackIsCanceled = true;
+            TargetValid = false;
+        }
+        return TargetValid;
     }
     public void CmdModifyHealth(GameObject currentTarget, float healthChange)
     {
@@ -399,9 +329,9 @@ public class Combat : MonoBehaviour
 
     private IEnumerator Attack()
     {
-        // isAttacking = true;
-        // attackIsCanceled = false;
-        // coroutineCount++;
+        isAttacking = true;
+        attackIsCanceled = false;
+        coroutineCount++;
         // if (hasAnimator)
         // {
 
@@ -412,30 +342,42 @@ public class Combat : MonoBehaviour
         //     AnimateAttackServer();
 
         // }
-        // Debug.Log("Attack Coroutine Started: " + coroutineCount);
 
-        // GameObject currentTarget = target;
+        GameObject currentTarget = unitInfo.Target;
         yield return new WaitForSeconds(baseAttackTime);
 
 
+        if (unitInfo != null)
+        {
+            if(unitInfo.Target != null)
+            {
 
-        // if (distanceFromTarget < attackRange && !walking && currentTarget == target && target.activeSelf && gameObject.activeSelf && !attackIsCanceled)
-        // {
-        //     Debug.Log(name + " attacked successfully");
-        //     if (isPlayer)
-        //     {
-        //         CmdModifyHealth(currentTarget, damage, 0f);
-        //         Debug.Log(animator.GetCurrentAnimatorStateInfo(0).normalizedTime);
-        //     }
-        //     if (!isPlayer && isServer)
-        //     {
-        //         currentTarget.GetComponent<Health>().currentHealth += damage;
-        //     }
+                // Debug.Log(player.distanceFromTarget < attackRange);
+                // Debug.Log(!player.walking);
+                // Debug.Log(currentTarget == player.target);
+                // Debug.Log(player.target.activeSelf);
+                // Debug.Log(gameObject.activeSelf);
+                // Debug.Log(!attackIsCanceled);
+                if (unitInfo.DistanceFromTarget < attackRange && !unitInfo.Walking && currentTarget == unitInfo.Target && unitInfo.Target.activeSelf && gameObject.activeSelf && !attackIsCanceled)
+                {
+                    // Debug.Log(name + " attacked successfully");
+                    unitInfo.Target.GetComponent<Health>().ModifyHealth(-damage);
+                    // if (isPlayer)
+                    // {
+                    //     CmdModifyHealth(currentTarget, damage, 0f);
+                    //     Debug.Log(animator.GetCurrentAnimatorStateInfo(0).normalizedTime);
+                    // }
+                    // if (!isPlayer && isServer)
+                    // {
+                    //     currentTarget.GetComponent<Health>().currentHealth += damage;
+                    // }
 
-        // }
+                }
+            }
+        }
 
 
-        // isAttacking = false;
+        isAttacking = false;
     }
 
     private void NPCStartAttack()

@@ -10,13 +10,13 @@ public class Healthbar : MonoBehaviour
 
     [SerializeField]
     private Image healthbarImage;
-
+    public Slider healthSlider;
     public float currentHealthPercent;
 
     private void OnEnable()
     {
-        GetComponentInParent<Health>().EventHealthChanged += CmdChangeHealthbar;
-        currentHealthPercent = healthbarImage.fillAmount;
+        // GetComponentInParent<Health>().EventHealthChanged += CmdChangeHealthbar;
+        // currentHealthPercent = healthbarImage.fillAmount;
     }
 
     
@@ -72,7 +72,7 @@ public class Healthbar : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
-        healthbarImage.fillAmount = GetComponentInParent<Health>().currentHealth / GetComponentInParent<Health>().maxHealth;
+        healthSlider.value = GetComponentInParent<Health>().currentHealth / GetComponentInParent<Health>().maxHealth;
         //HealOrDamageWithoutEnumerator();
     }
     void LateUpdate()

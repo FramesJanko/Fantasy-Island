@@ -7,8 +7,6 @@ using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
-    public GameObject player;
-
     public Vector3 movementLocation;
 
     Vector3 detourLocation;
@@ -58,6 +56,8 @@ public class Player : MonoBehaviour
     InputAction rightClickMove;
     [SerializeField]
     InputAction stopMoving;
+    [SerializeField]
+    private float mininumApproachDistance;
     private void Awake()
     {
         _navMeshAgent = GetComponent<NavMeshAgent>();
@@ -88,6 +88,10 @@ public class Player : MonoBehaviour
     {
 
         {
+            if (target != null && target.activeSelf == false)
+            {
+                target = null;
+            }
             //Press Y to start in-game timer;
             // if (Input.GetKeyDown(KeyCode.Y))
             // {
@@ -123,6 +127,7 @@ public class Player : MonoBehaviour
             }
             
             ShowBehindWalls();
+            CheckIfWalking();
 
             if (walking)
             {
@@ -259,7 +264,7 @@ public class Player : MonoBehaviour
             //destinationDistanceFromTarget = Vector3.Distance(transform.position, target.transform.position);
             distanceFromTarget = Vector3.Distance(transform.position, target.transform.position);
 
-            if (/*destinationDistanceFromTarget < 1.5 && */distanceFromTarget < 1.5)
+            if (/*destinationDistanceFromTarget < 1.5 && */distanceFromTarget < mininumApproachDistance)
             {
                 //if (System.Math.Abs(movementLocation.x - target.transform.position.x) > 1.5 && System.Math.Abs(movementLocation.z - target.transform.position.z) > 1.5)
                 //{
@@ -305,14 +310,14 @@ public class Player : MonoBehaviour
         if (hit.collider.tag == "Enemy")
         {
             target = hit.collider.gameObject;
-            CmdSetTarget();
+            // CmdSetTarget();
             
             movementLocation = hit.collider.gameObject.transform.position;
         }
         else
         {
             Deselect();
-            Debug.Log("Deselecting");
+            // Debug.Log("Deselecting");
             target = null;
             movementLocation = hit.point;
 
@@ -336,9 +341,9 @@ public class Player : MonoBehaviour
     //     textScript.readyToShowTime = true;
     // }
     
-    public void CmdSetTarget()
-    {
-        GetComponent<Combat>().target = target;
-    }
+    // public void CmdSetTarget()
+    // {
+    //     GetComponent<Combat>().target = target;
+    // }
 }
 

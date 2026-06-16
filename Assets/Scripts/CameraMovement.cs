@@ -35,8 +35,8 @@ public class CameraMovement : MonoBehaviour
 
             newCameraPosition = Camera.main.transform.position;
 
-            newCameraPosition.x += (startPosition.x - changingMousePosition.x) / 10;
-            newCameraPosition.z += (startPosition.y - changingMousePosition.y) / 10;
+            newCameraPosition.x += -1f * ((startPosition.x - changingMousePosition.x) / (1/cameraSpeed));
+            newCameraPosition.z += -1f * ((startPosition.y - changingMousePosition.y) / (1/cameraSpeed));
             
             
             Camera.main.transform.position = newCameraPosition;
