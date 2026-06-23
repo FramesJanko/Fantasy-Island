@@ -500,6 +500,7 @@ GameObject:
   - component: {fileID: 4692615504961057424}
   - component: {fileID: 2176260068822040479}
   - component: {fileID: 6406955391497072536}
+  - component: {fileID: 8355633050808235487}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -610,8 +611,8 @@ NavMeshAgent:
   m_GameObject: {fileID: 5552002639892093727}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
-  m_Speed: 3.5
+  m_Radius: 0.2
+  m_Speed: 4.5
   m_Acceleration: 10
   avoidancePriority: 50
   m_AngularSpeed: 240
@@ -620,7 +621,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 1
-  m_BaseOffset: 0.5
+  m_BaseOffset: 0.45
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!114 &4692615504961057424
@@ -638,8 +639,8 @@ MonoBehaviour:
   baseAttackTime: 1
   AttackAnimatorNormalizedTime: 0
   attackBackswing: 0
-  attackRange: 1
-  damage: 60
+  attackRange: 3
+  damage: 10
   isAttacking: 0
   attackIsCanceled: 0
   animator: {fileID: 0}
@@ -676,29 +677,36 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b102dd6aa17ed544aadec4abaefd2dfa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UnitInfo
-  movementLocation: {x: 0, y: 0, z: 0}
-  totalExperience: 0
-  playerRightClickLocation: {x: 0, y: 0, z: 0}
-  moveCommandIssued: 0
-  movespeed: 0
-  target: {fileID: 0}
+  Target: {fileID: 0}
+  Walking: 0
+  DistanceFromTarget: 0
+--- !u!114 &8355633050808235487
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5552002639892093727}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e389f583123fe1d47920c280f003ea31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerControlledMovement
   walking: 0
+  target: {fileID: 0}
+  moveCommandIssued: 0
   distanceFromTarget: 0
   destinationCollider: {fileID: 0}
-  walkableTerrain:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  textScript: {fileID: 0}
   rightClickMove:
     m_Name: Right Click Move
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: 64ea6ea6-735f-4a48-b277-bea2008e1649
+    m_Id: a4f0590d-a4c4-4f38-8fae-a9d9f9298004
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 
-      m_Id: 545be12e-a4e5-4559-92d5-bedb99ca6829
+      m_Id: 6d9e2b8b-4553-4fad-9914-e2e77eaab231
       m_Path: <Mouse>/rightButton
       m_Interactions: 
       m_Processors: 
@@ -710,12 +718,12 @@ MonoBehaviour:
     m_Name: Stop Moving
     m_Type: 0
     m_ExpectedControlType: 
-    m_Id: c9c813f1-5c94-4906-b9f4-e60fbb98de46
+    m_Id: ec4975c4-dab8-432d-978a-2094e2abd1cc
     m_Processors: 
     m_Interactions: 
     m_SingletonActionBindings:
     - m_Name: 
-      m_Id: a0a4739d-9d3c-4231-a043-27635989aab6
+      m_Id: 9e8ef074-1925-4587-b7b8-214da7d3b3fa
       m_Path: <Keyboard>/s
       m_Interactions: 
       m_Processors: 
@@ -723,7 +731,10 @@ MonoBehaviour:
       m_Action: Stop Moving
       m_Flags: 0
     m_Flags: 0
-  mininumApproachDistance: 1
+  mininumApproachDistance: 0.99
+  walkableTerrain:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1 &6378067153421761909
 GameObject:
   m_ObjectHideFlags: 0
