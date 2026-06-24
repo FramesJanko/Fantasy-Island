@@ -42,6 +42,9 @@ public class NetworkManager : MonoBehaviour
     InputAction spacebar;
     [SerializeField]
     InputAction localTextUpdate;
+    public TMP_Text lobbyName;
+    public bool connectedToLobby;
+    public string connectedLobby;
 
     IEnumerator RequestText() {
         yield return new WaitForSeconds(2);
@@ -54,7 +57,7 @@ public class NetworkManager : MonoBehaviour
         spacebar.Enable();
         // ConnectToServer();
     }
-    public void ConnectToServerAsHost(string lobbyName){
+    public void ConnectToServerAsHost(){
         try{
             // client = new TcpClient(serverIP,port);
             // stream = client.GetStream();
@@ -64,7 +67,7 @@ public class NetworkManager : MonoBehaviour
             udpClient.Connect(serverIP, udpPort);
             Debug.Log("connected to server");
             // SendString("hi");
-            UDPInitialConnect(lobbyName);
+            UDPInitialConnect(lobbyName.text);
             // SendUdpString("hi");
             // Debug.Log("Reading Initial Data...");
             // byte[] buffer = new byte[32];
@@ -110,20 +113,25 @@ public class NetworkManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (spacebar.WasPressedThisFrame()) {
-            messageIndex += 1;
-            SendString(messageList[messageIndex % 3]);
-        }
-        if (localTextUpdate.WasPressedThisFrame())
-        {
-            messageIndex += 1;
-            text.text = messageList[messageIndex % 3];
-        }
+        // if (spacebar.WasPressedThisFrame()) {
+        //     messageIndex += 1;
+        //     SendString(messageList[messageIndex % 3]);
+        // }
+        // if (localTextUpdate.WasPressedThisFrame())
+        // {
+        //     messageIndex += 1;
+        //     text.text = messageList[messageIndex % 3];
+        // }
         if(udpClient != null && udpClient.Available > 0)
         {
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
             byte[] data = udpClient.Receive(ref remoteEP);
             Debug.Log($"Bytes: {ShowBytesAsString(data)}");
+            if(data[0] == 0)
+            {
+                connectedToLobby = true;
+                connectedLobby = Encoding.UTF8.GetString(data, 1, data.Length - 1);
+            }
         }
         // if(Input.GetKeyDown(KeyCode.B)){
         //     fixed_input_count += 1;
@@ -238,16 +246,17 @@ public class NetworkManager : MonoBehaviour
             Debug.LogError("Socket connection is not established");
         }
     }
-    private void UDPInitialConnect(string lobbyName)
+    private void UDPInitialConnect(string _lobbyName)
     {
+        _lobbyName = _lobbyName.Trim(new char[] { ' ', '​', '‌', '‍', '﻿' });
         int hostBit = 1;
-        int message_size = 2 + lobbyName.Length;
-        byte[] bytes_message = new byte[message_size];
+        byte[] lobby_name_in_bytes = Encoding.UTF8.GetBytes(_lobbyName);
+        byte[] bytes_message = new byte[2 + lobby_name_in_bytes.Length];
         bytes_message[0] = 0x01;
         bytes_message[1] = BitConverter.GetBytes(hostBit)[0];
-        byte[] lobby_name_in_bytes = Encoding.UTF8.GetBytes(lobbyName);
-        Buffer.BlockCopy(lobby_name_in_bytes, 0, bytes_message, 2, lobbyName.Length);
+        Buffer.BlockCopy(lobby_name_in_bytes, 0, bytes_message, 2, lobby_name_in_bytes.Length);
         udpClient.Send(bytes_message, bytes_message.Length);
+        Debug.Log("UDP Sent: " + _lobbyName + " as " + ShowBytesAsString(bytes_message));
     }
     private void UDPClientConnect(int host, int spot)
     {
