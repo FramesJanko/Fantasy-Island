@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Fantasy Island.slnx",
+    "dotnet.defaultSolution": "Fantasy-Island.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }

@@ -25,7 +25,7 @@ public class NetworkManager : MonoBehaviour
     BinaryReader reader;
     BinaryWriter writer;
     UdpClient udpClient;
-    public string serverIP = "192.168.0.59";
+    public string serverIP;
     public int port = 12555;
     public int udpPort = 12555;
     public TextMeshProUGUI text;
@@ -45,11 +45,8 @@ public class NetworkManager : MonoBehaviour
     public TMP_Text lobbyName;
     public bool connectedToLobby;
     public string connectedLobby;
+    public string[] lobbyList;
 
-    IEnumerator RequestText() {
-        yield return new WaitForSeconds(2);
-        text.text = "hi";
-    }
     // Start is called before the first frame update
     void Start()
     {
@@ -63,8 +60,11 @@ public class NetworkManager : MonoBehaviour
             // stream = client.GetStream();
             // reader = new BinaryReader(stream);
             // writer = new BinaryWriter(stream);
-            udpClient = new UdpClient();
-            udpClient.Connect(serverIP, udpPort);
+            if(udpClient == null)
+            {
+                udpClient = new UdpClient();
+                udpClient.Connect(serverIP, udpPort);
+            }
             Debug.Log("connected to server");
             // SendString("hi");
             UDPInitialConnect(lobbyName.text);
@@ -83,16 +83,19 @@ public class NetworkManager : MonoBehaviour
             Debug.LogError($"Could not connect to server: {e.Message}");
         }
     }
-    public void ConnectToServerAsClient(){
+    public void GetLobbyList(){
         try{
             // client = new TcpClient(serverIP,port);
             // stream = client.GetStream();
             // reader = new BinaryReader(stream);
             // writer = new BinaryWriter(stream);
-            udpClient = new UdpClient();
-            udpClient.Connect(serverIP, udpPort);
+            if(udpClient == null)
+            {
+                udpClient = new UdpClient();
+                udpClient.Connect(serverIP, udpPort);
+            }
             Debug.Log("connected to server");
-            UDPClientConnect(0, 0);
+            LobbyRequestMessage();
             // SendString("hi");
             // SendUdpString("hi");
             // Debug.Log("Reading Initial Data...");
@@ -108,6 +111,11 @@ public class NetworkManager : MonoBehaviour
         } catch (Exception e) {
             Debug.LogError($"Could not connect to server: {e.Message}");
         }
+    }
+    public void ConnectToLobby(int lobby_id)
+    {
+        byte[] message = new byte[3] {1, 0, (byte)lobby_id};
+        udpClient.Send(message, message.Length);
     }
 
     // Update is called once per frame
@@ -127,10 +135,31 @@ public class NetworkManager : MonoBehaviour
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
             byte[] data = udpClient.Receive(ref remoteEP);
             Debug.Log($"Bytes: {ShowBytesAsString(data)}");
+            //Acknowledge Connection Message
             if(data[0] == 0)
             {
-                connectedToLobby = true;
-                connectedLobby = Encoding.UTF8.GetString(data, 1, data.Length - 1);
+                //Is Server Acknowledge
+                if(data[1] == 0)
+                {
+
+                    connectedToLobby = true;
+                    connectedLobby = Encoding.UTF8.GetString(data, 2, data.Length - 2);
+                }
+
+
+                //Is requesting Lobby List Acknowledge
+                if(data[1] == 2)
+                {
+                    lobbyList = new string[4];
+                    for(int i = 0; i < 4; i++)
+                    {
+                        int lobby_string_size = 16;
+                        int offset = (i*16) + 2;
+                        if(data[offset] != 0)
+                            lobbyList[i] = Encoding.UTF8.GetString(data, offset, lobby_string_size);
+                    }
+                }
+
             }
         }
         // if(Input.GetKeyDown(KeyCode.B)){
@@ -251,16 +280,17 @@ public class NetworkManager : MonoBehaviour
         _lobbyName = _lobbyName.Trim(new char[] { ' ', '​', '‌', '‍', '﻿' });
         int hostBit = 1;
         byte[] lobby_name_in_bytes = Encoding.UTF8.GetBytes(_lobbyName);
-        byte[] bytes_message = new byte[2 + lobby_name_in_bytes.Length];
+        byte[] bytes_message = new byte[2 + lobby_name_in_bytes.Length + 1];
         bytes_message[0] = 0x01;
         bytes_message[1] = BitConverter.GetBytes(hostBit)[0];
         Buffer.BlockCopy(lobby_name_in_bytes, 0, bytes_message, 2, lobby_name_in_bytes.Length);
+        bytes_message[bytes_message.Length-1] = 0x00;
         udpClient.Send(bytes_message, bytes_message.Length);
         Debug.Log("UDP Sent: " + _lobbyName + " as " + ShowBytesAsString(bytes_message));
     }
-    private void UDPClientConnect(int host, int spot)
+    private void LobbyRequestMessage()
     {
-        byte[] bytes_message = new byte[] { 1, 0, (byte)host, (byte)spot};
+        byte[] bytes_message = new byte[] { 1, 2};
         udpClient.Send(bytes_message, bytes_message.Length);
     }
     private void SendUdpString(string message)
