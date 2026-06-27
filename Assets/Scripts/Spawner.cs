@@ -1,42 +1,43 @@
-﻿// using Mirror;
-// using System.Collections;
-// using System.Collections.Generic;
-// using UnityEngine;
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
-// public class Spawner : NetworkBehaviour
-// {
+public class Spawner : MonoBehaviour
+{
 
-//     [SerializeField]
-//     private EnemySpawner es;
+    [SerializeField]
 
-//     private Camera cam;
+    private Camera cam;
+    public GameObject player_prefab;
+    public GameObject del_prefab;
+    [SerializeField]
+    private LayerMask walkable_terrain;
+    private void Start()
+    {
+        cam = Camera.main;
+    }
 
-//     [SerializeField]
-//     private LayerMask walkableTerrain;
-//     private void Start()
-//     {
-//         cam = Camera.main;
-//         es = GetComponent<EnemySpawner>();
-//     }
+    // Update is called once per frame
+    void Awake()
+    {
+        NPCManager.npcs.Clear();
+    }
+    void Update()
+    {
 
-//     // Update is called once per frame
-//     void Update()
-//     {
-//         if (isServer)
-//         {
-//             if (Input.GetKeyDown(KeyCode.F))
-//             {
-//                 Vector3 worldMousePosition = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 200f));
-//                 Vector3 direction = worldMousePosition - cam.transform.position;
+    }
 
-//                 RaycastHit hit;
-
-//                 if (Physics.Raycast(cam.transform.position, direction, out hit, 200f, walkableTerrain))
-//                 {
-//                     es.SpawnEnemy(hit.point);
-
-//                 }
-//             }
-//         }
-//     }
-// }
+    public void SpawnPlayerCharacter()
+    {
+        GameObject new_player = Instantiate(player_prefab, transform.position, player_prefab.transform.rotation);
+        NPCManager.AddToTargetList(new_player.GetComponent<PlayerControlledMovement>());
+    }
+    public void SpawnNPC()
+    {
+        GameObject new_NPC = Instantiate(del_prefab, transform.position, del_prefab.transform.rotation);
+        NPCManager.npcs.Add(new_NPC);
+        Debug.Log("NPC Count: " + NPCManager.npcs.Count);
+    }
+}

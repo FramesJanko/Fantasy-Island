@@ -13,13 +13,13 @@ public class LobbyMenu : MonoBehaviour
     void Start()
     {
         parentCanvas = GetComponentInParent<MenuToggle>();
-        _lobbyList = parentCanvas.network.GetComponent<NetworkManager>().lobbyList;
+        _lobbyList = parentCanvas.network.lobbyList;
     }
 
     // Update is called once per frame
     void Update()
     {
-        _lobbyList = parentCanvas.network.GetComponent<NetworkManager>().lobbyList;
+        _lobbyList = parentCanvas.network.lobbyList;
         for(int i = 0; i < _lobbyList.Length; i++)
         {
             if(_lobbyList[i] != null)

@@ -45,6 +45,9 @@ public class NetworkManager : MonoBehaviour
     public TMP_Text lobbyName;
     public bool connectedToLobby;
     public string connectedLobby;
+    public int is_host;
+    public int host_number;
+    public int client_number;
     public string[] lobbyList;
 
     // Start is called before the first frame update
@@ -52,32 +55,24 @@ public class NetworkManager : MonoBehaviour
     {
         localTextUpdate.Enable();
         spacebar.Enable();
-        // ConnectToServer();
+    }
+    public byte[] FormClientMessage(int host, int clientId)
+    {
+        byte[] message = new byte[256];
+        message[0] = 0x03;
+        message[1] = (byte)host;
+        message[2] = (byte)clientId;
+        return message;
     }
     public void ConnectToServerAsHost(){
         try{
-            // client = new TcpClient(serverIP,port);
-            // stream = client.GetStream();
-            // reader = new BinaryReader(stream);
-            // writer = new BinaryWriter(stream);
             if(udpClient == null)
             {
                 udpClient = new UdpClient();
                 udpClient.Connect(serverIP, udpPort);
             }
             Debug.Log("connected to server");
-            // SendString("hi");
             UDPInitialConnect(lobbyName.text);
-            // SendUdpString("hi");
-            // Debug.Log("Reading Initial Data...");
-            // byte[] buffer = new byte[32];
-            // int bytesRead = stream.Read(buffer, 0, buffer.Length);
-            // if (bytesRead > 0) {
-            //     writer.Write(new byte[] { 0x00 });
-            //     writer.Flush();
-            //     int messageIdentifier = buffer[0];
-            //     Debug.Log(messageIdentifier);
-            // }
             
         } catch (Exception e) {
             Debug.LogError($"Could not connect to server: {e.Message}");
@@ -85,10 +80,6 @@ public class NetworkManager : MonoBehaviour
     }
     public void GetLobbyList(){
         try{
-            // client = new TcpClient(serverIP,port);
-            // stream = client.GetStream();
-            // reader = new BinaryReader(stream);
-            // writer = new BinaryWriter(stream);
             if(udpClient == null)
             {
                 udpClient = new UdpClient();
@@ -96,17 +87,6 @@ public class NetworkManager : MonoBehaviour
             }
             Debug.Log("connected to server");
             LobbyRequestMessage();
-            // SendString("hi");
-            // SendUdpString("hi");
-            // Debug.Log("Reading Initial Data...");
-            // byte[] buffer = new byte[32];
-            // int bytesRead = stream.Read(buffer, 0, buffer.Length);
-            // if (bytesRead > 0) {
-            //     writer.Write(new byte[] { 0x00 });
-            //     writer.Flush();
-            //     int messageIdentifier = buffer[0];
-            //     Debug.Log(messageIdentifier);
-            // }
             
         } catch (Exception e) {
             Debug.LogError($"Could not connect to server: {e.Message}");
@@ -116,130 +96,6 @@ public class NetworkManager : MonoBehaviour
     {
         byte[] message = new byte[3] {1, 0, (byte)lobby_id};
         udpClient.Send(message, message.Length);
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        // if (spacebar.WasPressedThisFrame()) {
-        //     messageIndex += 1;
-        //     SendString(messageList[messageIndex % 3]);
-        // }
-        // if (localTextUpdate.WasPressedThisFrame())
-        // {
-        //     messageIndex += 1;
-        //     text.text = messageList[messageIndex % 3];
-        // }
-        if(udpClient != null && udpClient.Available > 0)
-        {
-            IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
-            byte[] data = udpClient.Receive(ref remoteEP);
-            Debug.Log($"Bytes: {ShowBytesAsString(data)}");
-            //Acknowledge Connection Message
-            if(data[0] == 0)
-            {
-                //Is Server Acknowledge
-                if(data[1] == 0)
-                {
-
-                    connectedToLobby = true;
-                    connectedLobby = Encoding.UTF8.GetString(data, 2, data.Length - 2);
-                }
-
-
-                //Is requesting Lobby List Acknowledge
-                if(data[1] == 2)
-                {
-                    lobbyList = new string[4];
-                    for(int i = 0; i < 4; i++)
-                    {
-                        int lobby_string_size = 16;
-                        int offset = (i*16) + 2;
-                        if(data[offset] != 0)
-                            lobbyList[i] = Encoding.UTF8.GetString(data, offset, lobby_string_size);
-                    }
-                }
-
-            }
-        }
-        // if(Input.GetKeyDown(KeyCode.B)){
-        //     fixed_input_count += 1;
-        //     Debug.Log("Spawn");
-        //     RequestSpawnCharacter(new byte[]{ 0x01 });
-        // }
-        // if(Input.GetKeyDown(KeyCode.G)){
-        //     fixed_input_count += 1;
-        //     Debug.Log("Spawn");
-        //     RequestSpawnCharacter(new byte[]{ 0x02 });
-        // }
-        // if (stream != null && stream.DataAvailable)
-        // {
-        //     Debug.Log("Reading");
-        //     byte[] buffer = new byte[4096]; // Assume no larger than 4096
-        //     int bytesRead = stream.Read(buffer, 0, buffer.Length);
-        //     if (bytesRead > 0)
-        //     {
-        //         int messageIdentifier = buffer[2];
-        //         int length = BitConverter.ToInt32(buffer, 3);
-        //         if (messageIdentifier == 0){
-        //             Debug.Log($"Bytes read: {bytesRead}");
-        //             Debug.Log($"{length} bytes remaining");
-        //             Debug.Log($"Bytes: {ShowBytesAsString(buffer)}");
-        //             Debug.Log(messageIdentifier);
-        //             //Show error message
-        //             Debug.Log("ERROR");
-        //             string newText = Encoding.UTF8.GetString(buffer, 11, bytesRead - 11);
-        //             Debug.Log(newText);
-        //         }
-        //         if (messageIdentifier == 1){
-        //             Debug.Log($"Bytes read: {bytesRead}");
-        //             Debug.Log($"{length} bytes remaining");
-        //             Debug.Log($"Bytes: {ShowBytesAsString(buffer)}");
-        //             Debug.Log(messageIdentifier);
-        //             string newText = Encoding.UTF8.GetString(buffer, 11, bytesRead - 11);
-        //             Debug.Log(newText);
-        //             text.text = newText;
-        //         }
-        //         if (messageIdentifier == 2){
-        //             Debug.Log($"Bytes read: {bytesRead}");
-        //             Debug.Log($"{length} bytes remaining");
-        //             Debug.Log($"Bytes: {ShowBytesAsString(buffer)}");
-        //             Debug.Log(messageIdentifier);
-        //             //Show error message
-        //             Debug.Log("SUCCESS");
-        //             position.x = BitConverter.ToSingle(buffer, 15);
-        //             position.y = BitConverter.ToSingle(buffer, 19);
-        //             position.z = BitConverter.ToSingle(buffer, 23);
-        //             GameObject spawnee = Instantiate(playerCharacter, position, Quaternion.identity);
-        //         }
-        //         else if(messageIdentifier == 3) {
-        //             Debug.Log($"Getting vector from buffer: {ShowBytesAsString(buffer)}");
-        //             position.x = BitConverter.ToSingle(buffer, 11);
-        //             position.y = BitConverter.ToSingle(buffer, 15);
-        //             position.z = BitConverter.ToSingle(buffer, 19);
-        //             player_pos.position = position;
-        //         }
-        //     }
-        // }
-    }
-    void FixedUpdate()
-    {
-        // if(should_flip){
-        //     fu_count++;
-        //     if (fu_count % 15 == 0) {
-        //         first_location = !first_location;
-        //         if (first_location){
-        //             messageIndex += 1;
-        //             Debug.Log("Sending vector");
-        //             RequestMoveCharacter(new Vector3(3.5f, 0.0f, 1.0f));
-        //         }
-        //         else{
-        //             messageIndex += 1;
-        //             Debug.Log("Sending vector");
-        //             RequestMoveCharacter(new Vector3(-3.5f, 0.0f, -1.0f));
-        //         }
-        //     }
-        // }
     }
 
     string ShowBytesAsString(byte[] bytes){
@@ -255,7 +111,6 @@ public class NetworkManager : MonoBehaviour
         return message;
 
     }
-
     private void SendString(string message)
     {
         if (stream != null && client.Connected){
@@ -366,100 +221,55 @@ public class NetworkManager : MonoBehaviour
         }
         udpClient?.Close();
     }
+    // Update is called once per frame
+    void Update()
+    {
+        if(udpClient != null && udpClient.Available > 0)
+        {
+            IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
+            byte[] data = udpClient.Receive(ref remoteEP);
+            Debug.Log($"Bytes: {ShowBytesAsString(data)}");
+            //Acknowledge Connection Message
+            if(data[0] == 0)
+            {
+                //Is Server Acknowledge
+                if(data[1] == 0)
+                {
+                    if(data.Length > 18)
+                    {
+                        is_host = 0;
+                        host_number = data[2];
+                        client_number = data[3];
+                        connectedLobby = Encoding.UTF8.GetString(data, 4, data.Length - 4).TrimEnd('\0');
+                    }
+                    else
+                    {
+                        is_host = 1;
+                        connectedLobby = Encoding.UTF8.GetString(data, 2, data.Length - 2).TrimEnd('\0');
+                    }
+                    connectedToLobby = true;
+                }
+
+
+                //Is requesting Lobby List Acknowledge
+                if(data[1] == 2)
+                {
+                    lobbyList = new string[4];
+                    for(int i = 0; i < 4; i++)
+                    {
+                        int lobby_string_size = 16;
+                        int offset = (i*16) + 2;
+                        if(data[offset] != 0)
+                            lobbyList[i] = Encoding.UTF8.GetString(data, offset, lobby_string_size);
+                    }
+                }
+            }
+        }
+    }
+    void FixedUpdate()
+    {
+    }
+
+
 }
 
-// public class ChangeText : MonoBehaviour
-// {
-//     TcpClient client;
-//     NetworkStream stream;
-//     BinaryReader reader;
-//     BinaryWriter writer;
-//     public string serverIP = "192.168.0.59";
-//     public int port = 12544;
-//     public TextMeshProUGUI text;
-//     public GameObject plane;
-//     public GameObject player;
-
-//     // Start is called before the first frame update
-//     void Start()
-//     {
-//         ConnectToServer();
-//     }
-//     void ConnectToServer(){
-//         try{
-//             client = new TcpClient(serverIP,port);
-//             stream = client.GetStream();
-//             reader = new BinaryReader(stream);
-//             writer = new BinaryWriter(stream);
-//             Debug.Log("connected to server");
-//         } catch (Exception e) {
-//             Debug.LogError($"Could not connect to server: {e.Message}");
-//         }
-//     }
-
-//     // Update is called once per frame
-//     void Update()
-//     {
-//         if (stream != null && stream.DataAvailable)
-//         {
-//             byte[] buffer = new byte[12];
-//             int bytesRead = stream.Read(buffer, 0, buffer.Length);
-
-//             if (bytesRead == buffer.Length)
-//             {
-//                 if (BitConverter.IsLittleEndian){
-//                     Array.Reverse(buffer, 0, 4);
-//                     Array.Reverse(buffer, 4, 4);
-//                     Array.Reverse(buffer, 8, 4);
-//                 }
-                
-//                 float x = BitConverter.ToSingle(buffer, 0);
-//                 float y = BitConverter.ToSingle(buffer, 4);
-//                 float z = BitConverter.ToSingle(buffer, 8);
-                
-//                 Vector3 new_position = new Vector3(x,y,z);
-//                 Debug.Log("Vector received from server: " + new_position);
-//                 player.transform.position = new_position;
-//             }
-//         }
-
-//         // RequestMoveCharacter(player);
-
-        
-//     }
-
-
-//     private void RequestMoveCharacter(GameObject player)
-//     {
-//         if (stream != null && client.Connected){
-//             byte[] buffer = new byte[12];
-//             Buffer.BlockCopy(BitConverter.GetBytes(player.transform.position.x), 0, buffer, 0, 4);
-//             Buffer.BlockCopy(BitConverter.GetBytes(player.transform.position.y), 0, buffer, 4, 4);
-//             Buffer.BlockCopy(BitConverter.GetBytes(player.transform.position.z), 0, buffer, 8, 4);
-//             byte[] printable_buffer = new byte[buffer.Length];
-//             Array.Copy(buffer, printable_buffer, buffer.Length);
-//             if (BitConverter.IsLittleEndian){
-//                 Array.Reverse(buffer, 0, 4);
-//                 Array.Reverse(buffer, 4, 4);
-//                 Array.Reverse(buffer, 8, 4);
-//             }
-//             writer.Write(buffer);
-//             writer.Flush();
-//             Debug.Log("Sent: " + printable_buffer);
-//         }
-//         else {
-//             Debug.LogError("Socket connection is not established");
-//         }
-//     }
-
-//     private void OnApplicationQuit(){
-//         if (stream != null){
-//             writer.Close();
-//             reader.Close();
-//             stream.Close();
-//         }
-//         if (client != null){
-//             client.Close();
-//         }
-//     }
-// }

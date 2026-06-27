@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class MenuToggle : MonoBehaviour
 {
-    public GameObject network;
+    public NetworkManager network;
     public GameObject menu;
     bool menuActive = true;
     bool lobbyNameSet;
@@ -14,7 +14,7 @@ public class MenuToggle : MonoBehaviour
     }
     void Update()
     {
-        if (network.GetComponent<NetworkManager>().connectedToLobby)
+        if (network.connectedToLobby)
         {
             if (menuActive)
             {
@@ -24,7 +24,16 @@ public class MenuToggle : MonoBehaviour
             if (!lobbyNameSet)
             {
                 lobbyNameSet = true;
-                lobbyName.text = network.GetComponent<NetworkManager>().connectedLobby;
+                if(network.is_host == 0)
+                {
+                    Debug.Log(network.connectedLobby + " " + network.is_host.ToString() + " " + network.host_number.ToString() + " " + network.client_number.ToString());
+                    lobbyName.text = network.connectedLobby + " " + network.is_host.ToString() + " " + network.host_number.ToString() + " " + network.client_number.ToString();
+                }
+                else
+                {
+                    Debug.Log(network.connectedLobby + " " + network.is_host.ToString());
+                    lobbyName.text = network.connectedLobby + " " + network.is_host.ToString();
+                }
             }
         }
     }

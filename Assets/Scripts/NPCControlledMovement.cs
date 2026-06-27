@@ -8,7 +8,7 @@ using UnityEngine.AI;
 public class NPCControlledMovement : MonoBehaviour
 {
     Combat combat;
-    PlayerControlledMovement[] players;
+    public List<PlayerControlledMovement> players;
     UnitInfo _unitInfo;
     [SerializeField]
     float mininumApproachDistance;
@@ -25,11 +25,12 @@ public class NPCControlledMovement : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        players = FindObjectsByType<PlayerControlledMovement>();
+        players = FindObjectsByType<PlayerControlledMovement>().ToList();
         _navMeshAgent = GetComponent<NavMeshAgent>();
         combat = GetComponent<Combat>();
         movementLocation = transform.position;
         spawningLocation = transform.position;
+        Debug.Log("Players count: " + players.Count);
     }
 
     // Update is called once per frame

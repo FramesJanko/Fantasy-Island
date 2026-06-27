@@ -8,20 +8,37 @@ public class CameraMovement : MonoBehaviour
     [SerializeField]
     InputAction cameraPan;
     [SerializeField]
+    InputAction cameraZoom;
+    [SerializeField]
     private float cameraSpeed;
+    [SerializeField]
+    private float zoomSpeed = 0.01f;
 
     private Vector3 startPosition;
-
     private Vector3 newCameraPosition;
-    // Start is called before the first frame update
+    private float targetZoomY;
+    private const float zoomFloor = 2f;
+
     void Start()
     {
         cameraPan.Enable();
+        cameraZoom.Enable();
+        targetZoomY = Camera.main.transform.position.y;
     }
 
-    // Update is called once per frame
     void Update()
     {
+        float scrollDelta = cameraZoom.ReadValue<float>();
+        if (scrollDelta != 0f)
+        {
+            targetZoomY -= scrollDelta * zoomSpeed;
+            targetZoomY = Mathf.Max(targetZoomY, zoomFloor);
+        }
+
+        Vector3 pos = Camera.main.transform.position;
+        pos.y = Mathf.Lerp(pos.y, targetZoomY, Time.deltaTime * 10f);
+        Camera.main.transform.position = pos;
+
         if (cameraPan.WasPressedThisFrame())
         {
             startPosition = Mouse.current.position.ReadValue();
