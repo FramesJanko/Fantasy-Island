@@ -56,12 +56,21 @@ public class NetworkManager : MonoBehaviour
         localTextUpdate.Enable();
         spacebar.Enable();
     }
-    public byte[] FormClientMessage(int host, int clientId)
+    public byte[] FormHostMessage(int host)
     {
         byte[] message = new byte[256];
-        message[0] = 0x03;
+        message[0] = 0x02;
         message[1] = (byte)host;
-        message[2] = (byte)clientId;
+        udpClient.Send(message, message.Length);
+        return message;
+    }
+    public byte[] FormClientMessage(int host, int client)
+    {
+        byte[] message = new byte[256];
+        message[0] = 0x02;
+        message[1] = (byte)host;
+        message[2] = (byte)client;
+        udpClient.Send(message, message.Length);
         return message;
     }
     public void ConnectToServerAsHost(){
@@ -235,7 +244,7 @@ public class NetworkManager : MonoBehaviour
                 //Is Server Acknowledge
                 if(data[1] == 0)
                 {
-                    if(data.Length > 18)
+                    if(data.Length > 19)
                     {
                         is_host = 0;
                         host_number = data[2];
@@ -245,7 +254,8 @@ public class NetworkManager : MonoBehaviour
                     else
                     {
                         is_host = 1;
-                        connectedLobby = Encoding.UTF8.GetString(data, 2, data.Length - 2).TrimEnd('\0');
+                        host_number = data[2];
+                        connectedLobby = Encoding.UTF8.GetString(data, 3, data.Length - 3).TrimEnd('\0');
                     }
                     connectedToLobby = true;
                 }
@@ -263,6 +273,11 @@ public class NetworkManager : MonoBehaviour
                             lobbyList[i] = Encoding.UTF8.GetString(data, offset, lobby_string_size);
                     }
                 }
+            }
+            else if(data[0] == 2)
+            {
+
+                Debug.Log("0x02 message received: " + ShowBytesAsString(data));
             }
         }
     }

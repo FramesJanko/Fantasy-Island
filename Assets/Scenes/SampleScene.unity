@@ -3223,6 +3223,23 @@ MonoBehaviour:
   network: {fileID: 1546496745}
   menu: {fileID: 560211109}
   lobbyName: {fileID: 548891071}
+  sendHostMessage:
+    m_Name: Send Host Message
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: d8dc3d20-11b7-46f7-b353-f46ae4877fc5
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: d8d76ebc-754d-4f9f-bd9a-feff595b0448
+      m_Path: <Keyboard>/d
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Send Host Message
+      m_Flags: 0
+    m_Flags: 0
 --- !u!1 &1089506482
 GameObject:
   m_ObjectHideFlags: 0

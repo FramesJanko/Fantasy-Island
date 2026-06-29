@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class MenuToggle : MonoBehaviour
 {
@@ -8,9 +9,14 @@ public class MenuToggle : MonoBehaviour
     bool menuActive = true;
     bool lobbyNameSet;
     public TMP_Text lobbyName;
+    public InputAction sendHostMessage;
     public void ToggleMenu(bool shouldBeActive)
     {
         menu.SetActive(shouldBeActive);
+    }
+    void Start()
+    {
+        sendHostMessage.Enable();
     }
     void Update()
     {
@@ -34,6 +40,10 @@ public class MenuToggle : MonoBehaviour
                     Debug.Log(network.connectedLobby + " " + network.is_host.ToString());
                     lobbyName.text = network.connectedLobby + " " + network.is_host.ToString();
                 }
+            }
+            if (network.is_host == 1 && sendHostMessage.WasPressedThisFrame())
+            {
+                network.FormHostMessage(network.host_number);
             }
         }
     }

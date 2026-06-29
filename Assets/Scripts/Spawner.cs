@@ -31,6 +31,7 @@ public class Spawner : MonoBehaviour
 
     public void SpawnPlayerCharacter()
     {
+
         GameObject new_player = Instantiate(player_prefab, transform.position, player_prefab.transform.rotation);
         NPCManager.AddToTargetList(new_player.GetComponent<PlayerControlledMovement>());
     }
