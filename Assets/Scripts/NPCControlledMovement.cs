@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -17,6 +18,7 @@ public class NPCControlledMovement : MonoBehaviour
     public float huntingDistance;
     [SerializeField]
     float leashRange;
+    public byte id;
 
     void Awake()
     {
@@ -85,6 +87,20 @@ public class NPCControlledMovement : MonoBehaviour
                 movementLocation = transform.position;
             }
         }
+        if(NetworkManager.Instance.is_host == 1)
+        {
+            _navMeshAgent.SetDestination(movementLocation);
+            NetworkManager.Instance.SendLocationPacket(id, movementLocation);
+        }
+        else
+        {
+            NetworkManager.Instance.SendLocationPacket(id, movementLocation, false);
+        }
+    }
+    public void ClientUpdateMovementLocation(Vector3 location)
+    {
+        movementLocation = location;
         _navMeshAgent.SetDestination(movementLocation);
     }
+
 }

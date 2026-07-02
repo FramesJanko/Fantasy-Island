@@ -4,10 +4,8 @@ using UnityEngine.InputSystem;
 
 public class MenuToggle : MonoBehaviour
 {
-    public NetworkManager network;
+    NetworkManager network;
     public GameObject menu;
-    bool menuActive = true;
-    bool lobbyNameSet;
     public TMP_Text lobbyName;
     public InputAction sendHostMessage;
     public void ToggleMenu(bool shouldBeActive)
@@ -16,35 +14,41 @@ public class MenuToggle : MonoBehaviour
     }
     void Start()
     {
+        network = NetworkManager.Instance;
+        network.OnLobbyJoined += HandleLobbyJoined;
+        // Cover the race where the lobby was joined before this subscribed.
+        if (network.connectedToLobby)
+        {
+            HandleLobbyJoined();
+        }
         sendHostMessage.Enable();
+    }
+    void OnDestroy()
+    {
+        if (network != null)
+        {
+            network.OnLobbyJoined -= HandleLobbyJoined;
+        }
+    }
+    void HandleLobbyJoined()
+    {
+        ToggleMenu(false);
+        if (network.is_host == 0)
+        {
+            lobbyName.text = network.connectedLobby + " " + network.is_host + " " + network.host_number + " " + network.client_number;
+        }
+        else
+        {
+            lobbyName.text = network.connectedLobby + " " + network.is_host;
+        }
+        Debug.Log(lobbyName.text);
     }
     void Update()
     {
-        if (network.connectedToLobby)
+        // Per-frame input still belongs here; only the one-time join reaction moved to the event.
+        if (network.connectedToLobby && network.is_host == 1 && sendHostMessage.WasPressedThisFrame())
         {
-            if (menuActive)
-            {
-                menuActive = false;
-                ToggleMenu(false);
-            }
-            if (!lobbyNameSet)
-            {
-                lobbyNameSet = true;
-                if(network.is_host == 0)
-                {
-                    Debug.Log(network.connectedLobby + " " + network.is_host.ToString() + " " + network.host_number.ToString() + " " + network.client_number.ToString());
-                    lobbyName.text = network.connectedLobby + " " + network.is_host.ToString() + " " + network.host_number.ToString() + " " + network.client_number.ToString();
-                }
-                else
-                {
-                    Debug.Log(network.connectedLobby + " " + network.is_host.ToString());
-                    lobbyName.text = network.connectedLobby + " " + network.is_host.ToString();
-                }
-            }
-            if (network.is_host == 1 && sendHostMessage.WasPressedThisFrame())
-            {
-                network.FormHostMessage(network.host_number);
-            }
+            network.RequestSpawn(SpawnId.Player, Vector3.zero);
         }
     }
 }

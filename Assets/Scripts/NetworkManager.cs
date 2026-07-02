@@ -18,8 +18,20 @@ public struct GameState {
     Vector3 position4;
 }
 
+// Identifier for the kind of object a spawn packet refers to.
+public enum SpawnId : byte
+{
+    Player = 1,
+    Del = 2
+}
+
 public class NetworkManager : MonoBehaviour
 {
+    public static NetworkManager Instance { get; private set; }
+
+    public event Action OnLobbyJoined;
+    public event Action OnLobbyListUpdated;
+
     TcpClient client;
     NetworkStream stream;
     BinaryReader reader;
@@ -49,6 +61,21 @@ public class NetworkManager : MonoBehaviour
     public int host_number;
     public int client_number;
     public string[] lobbyList;
+    [Tooltip("On-screen log for messages relayed from the other party in the lobby (visible in standalone builds where the console is not).")]
+    public TMP_Text serverMessageText;
+    private readonly Queue<string> messageLog = new Queue<string>();
+    private const int MaxLogLines = 8;
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            NetLogWarning("Duplicate NetworkManager detected; destroying the new one.");
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -56,22 +83,152 @@ public class NetworkManager : MonoBehaviour
         localTextUpdate.Enable();
         spacebar.Enable();
     }
-    public byte[] FormHostMessage(int host)
+    // Client-id sentinel placed in the packet when the host is the sender, so a
+    // host message is distinguishable from a real client 0. -1 is stored as the
+    // byte 0xFF on the wire and read back as a signed byte on receipt.
+    public const int HostClientId = -1;
+
+    // 0x02 spawn-packet wire format (16 bytes):
+    //   [0]=0x02, [1]=host#, [2]=owning client# (0xFF / -1 = host-owned),
+    //   [3]=object id (SpawnId), [4..7]=pos.x, [8..11]=pos.y, [12..15]=pos.z (floats).
+    // A client uses this to ask the host to spawn; the host uses it to approve a
+    // spawn to every client, with byte[2] carrying the owner.
+    private byte[] SendSpawnPacket(int host, int client, SpawnId objectId, Vector3 position, bool fromHost=true)
     {
-        byte[] message = new byte[256];
-        message[0] = 0x02;
-        message[1] = (byte)host;
-        udpClient.Send(message, message.Length);
-        return message;
-    }
-    public byte[] FormClientMessage(int host, int client)
-    {
-        byte[] message = new byte[256];
-        message[0] = 0x02;
+        int spawnIdentifier = 1;
+        byte[] message = new byte[17];
+        message[0] = fromHost ? (byte)0x02 : (byte)0x03;
         message[1] = (byte)host;
         message[2] = (byte)client;
-        udpClient.Send(message, message.Length);
+        message[3] = (byte)spawnIdentifier;
+        message[4] = (byte)objectId;
+        Debug.Log(ShowBytesAsString(new byte[] {(byte)objectId}));
+        Buffer.BlockCopy(BitConverter.GetBytes(position.x), 0, message, 5, 4);
+        Buffer.BlockCopy(BitConverter.GetBytes(position.y), 0, message, 9, 4);
+        Buffer.BlockCopy(BitConverter.GetBytes(position.z), 0, message, 13, 4);
+        if (udpClient != null)
+        {
+            udpClient.Send(message, message.Length);
+            Debug.Log("UDP Sent spawn packet: " + ShowBytesAsString(message));
+        }
+        else
+        {
+            NetLogError("UDP socket is not established");
+        }
+        // Echo locally: the server only relays to the other party, so the sender
+        // would otherwise never see its own spawn.
+        // DisplayServerMessage($"{objectId} spawn at {position}");
         return message;
+    }
+    
+    public byte[] SendLocationPacket(byte objectId, Vector3 position, bool fromHost=true)
+    {
+        int locationIdentifier = 2;
+        byte[] message = new byte[17];
+        message[0] = fromHost ? (byte)0x02 : (byte)0x03;
+        message[1] = (byte)host_number;
+        message[2] = (byte)client_number;
+        message[3] = (byte)locationIdentifier;
+        message[4] = objectId;
+        Buffer.BlockCopy(BitConverter.GetBytes(position.x), 0, message, 5, 4);
+        Buffer.BlockCopy(BitConverter.GetBytes(position.y), 0, message, 9, 4);
+        Buffer.BlockCopy(BitConverter.GetBytes(position.z), 0, message, 13, 4);
+        if (udpClient != null)
+        {
+            udpClient.Send(message, message.Length);
+            // Debug.Log("UDP Sent location packet: " + ShowBytesAsString(message));
+        }
+        else
+        {
+            NetLogError("UDP socket is not established");
+        }
+        // Echo locally: the server only relays to the other party, so the sender
+        // would otherwise never see its own spawn.
+        // DisplayServerMessage($"{objectId} spawn at {position}");
+        return message;
+    }
+    private void NotifyClientsLocation(byte objectId, Vector3 position, int ownerClientId)
+    {
+
+    }
+    // Entry point for spawn buttons. The host is authoritative: it spawns now and
+    // approves the spawn to every client. A client only asks the host, which then
+    // approves a spawn owned by that client (or an unowned del).
+    public void RequestSpawn(SpawnId objectId, Vector3 position)
+    {
+        if (is_host == 1)
+        {
+            // Host's own spawn is host-owned (-1).
+            HostSpawnAndApprove(objectId, position, HostClientId);
+        }
+        else if (!connectedToLobby)
+        {
+            // Offline/solo: just spawn locally with no networked owner.
+            SpawnObject(objectId, position, HostClientId);
+        }
+        else
+        {
+            // Client: ask the host to spawn; ownership is assigned host-side.
+            SendSpawnPacket(host_number, client_number, objectId, position, false);
+        }
+    }
+    // Host only: spawn locally and approve the spawn to every client. The owner id
+    // travels in the packet's client byte so each client can assign ownership.
+    private void HostSpawnAndApprove(SpawnId objectId, Vector3 position, int ownerClientId)
+    {
+        SpawnObject(objectId, position, ownerClientId);
+        SendSpawnPacket(host_number, ownerClientId, objectId, position);
+    }
+    // Host-side: actually instantiate the requested object via the Spawner.
+    // ownerClientId is the client the object belongs to (-1 = host, unowned for del).
+    private void SpawnObject(SpawnId objectId, Vector3 position, int ownerClientId)
+    {
+        if (Spawner.Instance == null)
+        {
+            NetLogWarning("No Spawner in the scene; cannot spawn.");
+            return;
+        }
+        switch (objectId)
+        {
+            case SpawnId.Player:
+                Spawner.Instance.SpawnPlayer(ownerClientId, position);
+                NetLog($"Spawned player owned by {(ownerClientId == HostClientId ? "host" : $"client {ownerClientId}")}");
+                break;
+            case SpawnId.Del:
+                Spawner.Instance.SpawnDel(position);
+                NetLog("Spawned del (unowned)");
+                break;
+        }
+    }
+    private void DisplayServerMessage(string message)
+    {
+        if (serverMessageText == null)
+        {
+            return;
+        }
+        messageLog.Enqueue(message);
+        while (messageLog.Count > MaxLogLines)
+        {
+            messageLog.Dequeue();
+        }
+        serverMessageText.text = string.Join("\n", messageLog);
+    }
+    // Mirror network diagnostics to both the console and the on-screen log so
+    // they stay visible in standalone builds where the console is not.
+    private void NetLog(string message)
+    {
+        Debug.Log(message);
+        DisplayServerMessage(message);
+    }
+    private void NetLogWarning(string message)
+    {
+        Debug.LogWarning(message);
+        DisplayServerMessage(message);
+    }
+    private void NetLogError(string message)
+    {
+        Debug.LogError(message);
+        DisplayServerMessage(message);
     }
     public void ConnectToServerAsHost(){
         try{
@@ -80,11 +237,11 @@ public class NetworkManager : MonoBehaviour
                 udpClient = new UdpClient();
                 udpClient.Connect(serverIP, udpPort);
             }
-            Debug.Log("connected to server");
+            // NetLog("connected to server");
             UDPInitialConnect(lobbyName.text);
             
         } catch (Exception e) {
-            Debug.LogError($"Could not connect to server: {e.Message}");
+            NetLogError($"Could not connect to server: {e.Message}");
         }
     }
     public void GetLobbyList(){
@@ -94,11 +251,11 @@ public class NetworkManager : MonoBehaviour
                 udpClient = new UdpClient();
                 udpClient.Connect(serverIP, udpPort);
             }
-            Debug.Log("connected to server");
+            // NetLog("connected to server");
             LobbyRequestMessage();
             
         } catch (Exception e) {
-            Debug.LogError($"Could not connect to server: {e.Message}");
+            NetLogError($"Could not connect to server: {e.Message}");
         }
     }
     public void ConnectToLobby(int lobby_id)
@@ -130,13 +287,13 @@ public class NetworkManager : MonoBehaviour
             prepended_bytes_message[0] = 0x01;
             Buffer.BlockCopy(message_size_in_bytes, 0, prepended_bytes_message, 1, message_size_in_bytes.Length);
             Buffer.BlockCopy(bytes_message, 0, prepended_bytes_message, 5, bytes_message.Length);
-            Debug.Log($"Sending {prepended_bytes_message.Length}");
+            NetLog($"Sending {prepended_bytes_message.Length}");
             writer.Write(prepended_bytes_message);
             writer.Flush();
-            Debug.Log("Sent: " + message + " as " + ShowBytesAsString(prepended_bytes_message));
+            NetLog("Sent: " + message + " as " + ShowBytesAsString(prepended_bytes_message));
         }
         else {
-            Debug.LogError("Socket connection is not established");
+            NetLogError("Socket connection is not established");
         }
     }
     private void UDPInitialConnect(string _lobbyName)
@@ -150,7 +307,7 @@ public class NetworkManager : MonoBehaviour
         Buffer.BlockCopy(lobby_name_in_bytes, 0, bytes_message, 2, lobby_name_in_bytes.Length);
         bytes_message[bytes_message.Length-1] = 0x00;
         udpClient.Send(bytes_message, bytes_message.Length);
-        Debug.Log("UDP Sent: " + _lobbyName + " as " + ShowBytesAsString(bytes_message));
+        // NetLog("UDP Sent: " + _lobbyName + " as " + ShowBytesAsString(bytes_message));
     }
     private void LobbyRequestMessage()
     {
@@ -167,10 +324,10 @@ public class NetworkManager : MonoBehaviour
             prepended_bytes_message[0] = 0x02; //2 is the signifer for a string incoming
             Buffer.BlockCopy(bytes_message, 0, prepended_bytes_message, 1, bytes_message.Length);
             udpClient.Send(prepended_bytes_message, prepended_bytes_message.Length);
-            Debug.Log("UDP Sent: " + message + " as " + ShowBytesAsString(prepended_bytes_message));
+            // NetLog("UDP Sent: " + message + " as " + ShowBytesAsString(prepended_bytes_message));
         }
         else {
-            Debug.LogError("UDP socket is not established");
+            NetLogError("UDP socket is not established");
         }
     }
     private void RequestSpawnCharacter(byte[] context_for_spawn){
@@ -186,11 +343,11 @@ public class NetworkManager : MonoBehaviour
             Array.Copy(buffer, printable_buffer, buffer.Length);
             writer.Write(buffer);
             writer.Flush();
-            Debug.Log("Sent: " + ShowBytesAsString(buffer));
-            Debug.Log("Printable buffer: " + ShowBytesAsString(printable_buffer));
+            // NetLog("Sent: " + ShowBytesAsString(buffer));
+            // NetLog("Printable buffer: " + ShowBytesAsString(printable_buffer));
         }
         else {
-            Debug.LogError("Socket connection is not established");
+            NetLogError("Socket connection is not established");
         }
     }
     private void RequestMoveCharacter(Vector3 pos)
@@ -211,11 +368,11 @@ public class NetworkManager : MonoBehaviour
             // }
             writer.Write(buffer);
             writer.Flush();
-            Debug.Log("Sent: " + ShowBytesAsString(buffer));
-            Debug.Log("Printable buffer: " + ShowBytesAsString(printable_buffer));
+            // NetLog("Sent: " + ShowBytesAsString(buffer));
+            // NetLog("Printable buffer: " + ShowBytesAsString(printable_buffer));
         }
         else {
-            Debug.LogError("Socket connection is not established");
+            NetLogError("Socket connection is not established");
         }
     }
 
@@ -230,14 +387,71 @@ public class NetworkManager : MonoBehaviour
         }
         udpClient?.Close();
     }
+    void HandleSpawn(byte[] spawnData)
+    {
+
+        // Spawn packet. The message type encodes direction:
+        //   2 = host approval arriving at a client, 3 = client request arriving at the host.
+        // Layout: [2]=owning client# (0xFF/-1 = host), [3]=object id, [4..15]=position.
+        if (spawnData.Length >= 17)
+        {
+            SpawnId objectId = (SpawnId)spawnData[4];
+            Vector3 spawnPos = new Vector3(
+                BitConverter.ToSingle(spawnData, 5),
+                BitConverter.ToSingle(spawnData, 9),
+                BitConverter.ToSingle(spawnData, 13));
+            int ownerClientId = (sbyte)spawnData[2];
+            string ownerLabel = ownerClientId == HostClientId ? "host" : $"client {ownerClientId}";
+            DisplayServerMessage($"{objectId} spawn at {spawnPos} owned by {ownerLabel}");
+            if (spawnData[0] == 3)
+            {
+                // A client asked us (the host) to spawn: spawn it (owned by
+                // them) and approve the spawn to every client in the lobby.
+                HostSpawnAndApprove(objectId, spawnPos, ownerClientId);
+            }
+            else
+            {
+                // The host approved a spawn: mirror it locally with its owner.
+                SpawnObject(objectId, spawnPos, ownerClientId);
+            }
+        }
+        else
+        {
+            NetLogWarning("Malformed spawn packet: " + ShowBytesAsString(spawnData));
+        }
+    }
+    void HandleLocation(byte[] locationData)
+    {
+        if(locationData.Length >= 17)
+        {
+            int objectId = locationData[4];
+            Vector3 objectLocation = new Vector3(
+                BitConverter.ToSingle(locationData, 5),
+                BitConverter.ToSingle(locationData, 9),
+                BitConverter.ToSingle(locationData, 13));
+            if(locationData[0] == 3)
+            {
+                NPCManager.npcs[objectId].GetComponent<NPCControlledMovement>().ClientUpdateMovementLocation(objectLocation);
+                SendLocationPacket((byte)objectId, objectLocation);
+            }
+            else
+            {
+                NPCManager.npcs[objectId].GetComponent<NPCControlledMovement>().ClientUpdateMovementLocation(objectLocation);
+            }
+        }
+        else
+        {
+            NetLogWarning("Malformed location packet " + ShowBytesAsString(locationData));
+        }
+    }
     // Update is called once per frame
     void Update()
     {
-        if(udpClient != null && udpClient.Available > 0)
+        while(udpClient != null && udpClient.Available > 0)
         {
             IPEndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
             byte[] data = udpClient.Receive(ref remoteEP);
-            Debug.Log($"Bytes: {ShowBytesAsString(data)}");
+            NetLog($"Bytes: {ShowBytesAsString(data)}");
             //Acknowledge Connection Message
             if(data[0] == 0)
             {
@@ -258,6 +472,7 @@ public class NetworkManager : MonoBehaviour
                         connectedLobby = Encoding.UTF8.GetString(data, 3, data.Length - 3).TrimEnd('\0');
                     }
                     connectedToLobby = true;
+                    OnLobbyJoined?.Invoke();
                 }
 
 
@@ -272,13 +487,22 @@ public class NetworkManager : MonoBehaviour
                         if(data[offset] != 0)
                             lobbyList[i] = Encoding.UTF8.GetString(data, offset, lobby_string_size);
                     }
+                    OnLobbyListUpdated?.Invoke();
                 }
             }
-            else if(data[0] == 2)
+            else if(data[0] == 2 || data[0] == 3)
             {
+                if(data[3] == 1)
+                {
+                    HandleSpawn(data);
+                }
+                else if(data[3] == 2)
+                {
+                    HandleLocation(data);
+                }
 
-                Debug.Log("0x02 message received: " + ShowBytesAsString(data));
             }
+
         }
     }
     void FixedUpdate()

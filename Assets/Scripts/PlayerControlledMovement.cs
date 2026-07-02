@@ -6,6 +6,9 @@ using UnityEngine.InputSystem;
 
 public class PlayerControlledMovement : MonoBehaviour
 {
+    [Header("Networking")]
+    [Tooltip("-1 = owned by the host; >= 0 = owned by that client id.")]
+    public int ownerClientId = -1;
     Combat combat;
     UnitInfo _unitInfo;
     Camera cam;
