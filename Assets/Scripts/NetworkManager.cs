@@ -147,6 +147,30 @@ public class NetworkManager : MonoBehaviour
         // DisplayServerMessage($"{objectId} spawn at {position}");
         return message;
     }
+    public byte[] SendNPCTargetPacket(byte objectId, int playerTarget, bool fromHost = true)
+    {
+
+        byte targetIdentifier = 3;
+        byte[] message = new byte[6];
+        message[0] = fromHost ? (byte)0x02 : (byte)0x03;
+        message[1] = (byte)host_number;
+        message[2] = (byte)client_number;
+        message[3] = targetIdentifier;
+        message[4] = objectId;
+        message[5] = (byte)playerTarget;
+        if (udpClient != null)
+        {
+            udpClient.Send(message, message.Length);
+        }
+        else
+        {
+            NetLogError("UDP socket is not established");
+        }
+        // Echo locally: the server only relays to the other party, so the sender
+        // would otherwise never see its own spawn.
+        DisplayServerMessage($"{objectId} targeting {playerTarget}");
+        return message;
+    }
     private void NotifyClientsLocation(byte objectId, Vector3 position, int ownerClientId)
     {
 
@@ -444,6 +468,27 @@ public class NetworkManager : MonoBehaviour
             NetLogWarning("Malformed location packet " + ShowBytesAsString(locationData));
         }
     }
+    void HandleNPCTargeting(byte[] npcTargetData)
+    {
+        if(npcTargetData.Length >= 6)
+        {
+            int objectId = npcTargetData[4];
+            int target = npcTargetData[5];
+            if(npcTargetData[0] == 3)
+            {
+                NPCManager.npcs[objectId].GetComponent<NPCControlledMovement>().ClientUpdateTarget(target);
+                SendNPCTargetPacket((byte)objectId, target);
+            }
+            else
+            {
+                NPCManager.npcs[objectId].GetComponent<NPCControlledMovement>().ClientUpdateTarget(target);
+            }
+        }
+        else
+        {
+            NetLogWarning("Malformed npc target packet " + ShowBytesAsString(npcTargetData));
+        }
+    }
     // Update is called once per frame
     void Update()
     {
@@ -499,6 +544,10 @@ public class NetworkManager : MonoBehaviour
                 else if(data[3] == 2)
                 {
                     HandleLocation(data);
+                }
+                else if(data[3] == 3)
+                {
+                    HandleNPCTargeting(data);
                 }
 
             }

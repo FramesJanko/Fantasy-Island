@@ -5,6 +5,7 @@ using System.Linq;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityEngine.InputSystem;
 
 public class NPCControlledMovement : MonoBehaviour
 {
@@ -19,6 +20,9 @@ public class NPCControlledMovement : MonoBehaviour
     [SerializeField]
     float leashRange;
     public byte id;
+    [SerializeField]
+    InputAction testMovement;
+    public int hostConfirmedTarget;
 
     void Awake()
     {
@@ -27,6 +31,8 @@ public class NPCControlledMovement : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        hostConfirmedTarget = -1;
+        testMovement.Enable();
         players = FindObjectsByType<PlayerControlledMovement>().ToList();
         _navMeshAgent = GetComponent<NavMeshAgent>();
         combat = GetComponent<Combat>();
@@ -41,11 +47,24 @@ public class NPCControlledMovement : MonoBehaviour
         if(_unitInfo.Target == null)
         {
 
-            foreach(PlayerControlledMovement player in players)
+            for(int i = 0; i < players.Count; i++)
             {
-                if(Vector3.Distance(spawningLocation, player.transform.position) < leashRange/2f && Vector3.Distance(player.transform.position, transform.position) < huntingDistance)
+                if(Vector3.Distance(spawningLocation, players[i].transform.position) < leashRange/2f && Vector3.Distance(players[i].transform.position, transform.position) < huntingDistance)
                 {
-                    _unitInfo.Target = player.gameObject;
+                    if(NetworkManager.Instance.is_host == 1)
+                    {
+                        _unitInfo.Target = players[i].gameObject;
+                        NetworkManager.Instance.SendNPCTargetPacket(id, i);
+                    }
+                    else if(hostConfirmedTarget > -1)
+                    {
+                        _unitInfo.Target = players[hostConfirmedTarget].gameObject;
+                        hostConfirmedTarget = -1;
+                    }
+                    else
+                    {
+                        NetworkManager.Instance.SendNPCTargetPacket(id, i, false);
+                    }
                 }
             }
         }
@@ -65,6 +84,7 @@ public class NPCControlledMovement : MonoBehaviour
         if(Vector3.Distance(spawningLocation, transform.position) > leashRange && _unitInfo.DistanceFromTarget > combat.attackRange || _unitInfo.Target != null && _unitInfo.Target.activeSelf == false)
         {
             Deselect();
+            hostConfirmedTarget = -1;
         }
         HandleMovement();
     }
@@ -87,20 +107,23 @@ public class NPCControlledMovement : MonoBehaviour
                 movementLocation = transform.position;
             }
         }
-        if(NetworkManager.Instance.is_host == 1)
-        {
-            _navMeshAgent.SetDestination(movementLocation);
-            NetworkManager.Instance.SendLocationPacket(id, movementLocation);
-        }
-        else
-        {
-            NetworkManager.Instance.SendLocationPacket(id, movementLocation, false);
-        }
+        _navMeshAgent.SetDestination(movementLocation);
+        // if(NetworkManager.Instance.is_host == 1)
+        // {
+        //     NetworkManager.Instance.SendLocationPacket(id, movementLocation);
+        // }
+        // else
+        // {
+        //     NetworkManager.Instance.SendLocationPacket(id, movementLocation, false);
+        // }
     }
     public void ClientUpdateMovementLocation(Vector3 location)
     {
         movementLocation = location;
-        _navMeshAgent.SetDestination(movementLocation);
+    }
+    public void ClientUpdateTarget(int targetId)
+    {
+        hostConfirmedTarget = targetId;
     }
 
 }

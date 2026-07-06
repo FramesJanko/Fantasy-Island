@@ -914,6 +914,24 @@ MonoBehaviour:
   spawningLocation: {x: 0, y: 0, z: 0}
   huntingDistance: 4
   leashRange: 10
+  id: 0
+  testMovement:
+    m_Name: Test Movement
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: efeb7c21-27c9-4033-9b64-1a6f568092d6
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: d14f5918-12bb-410f-8e4d-99898a7f9cc6
+      m_Path: <Keyboard>/j
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Test Movement
+      m_Flags: 0
+    m_Flags: 0
 --- !u!114 &2341659048890710238
 MonoBehaviour:
   m_ObjectHideFlags: 0

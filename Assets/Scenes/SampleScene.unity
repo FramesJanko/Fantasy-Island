@@ -4710,7 +4710,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 667a29141738d2741b531c97015d7acf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NetworkManager
-  serverIP: 98.180.125.163
+  serverIP: 127.0.0.1
   port: 12555
   udpPort: 12555
   text: {fileID: 966653459}
