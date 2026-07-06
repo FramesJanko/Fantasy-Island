@@ -64,49 +64,49 @@ public class Health : MonoBehaviour
         //AwardExperience();
         gameObject.SetActive(false);
     }
-    public void GetListofPlayersInRange()
-    {
-        playersList = FindObjectsByType<Player>();
+    // public void GetListofPlayersInRange()
+    // {
+    //     playersList = FindObjectsByType<Player>();
         
-        if (playersList.Length > 0)
-        {
+    //     if (playersList.Length > 0)
+    //     {
             
-            foreach (Player p in playersList)
-            {
+    //         foreach (Player p in playersList)
+    //         {
                 
-                if (Vector3.Distance(transform.position, p.transform.position) <= experianceRange)
-                {
-                    playersInExpRange++;
+    //             if (Vector3.Distance(transform.position, p.transform.position) <= experianceRange)
+    //             {
+    //                 playersInExpRange++;
                     
-                }
+    //             }
                 
 
-            }
-            foreach (Player p in playersList)
-            {
+    //         }
+    //         foreach (Player p in playersList)
+    //         {
 
-                if (Vector3.Distance(transform.position, p.transform.position) <= experianceRange)
-                {
+    //             if (Vector3.Distance(transform.position, p.transform.position) <= experianceRange)
+    //             {
                     
-                    AwardExperience(p);
-                }
+    //                 AwardExperience(p);
+    //             }
 
 
-            }
-            Debug.Log("Players in experience range: " + playersInExpRange);
-            playersInExpRange = 0;
-        }
+    //         }
+    //         Debug.Log("Players in experience range: " + playersInExpRange);
+    //         playersInExpRange = 0;
+    //     }
         
-    }
+    // }
     
-    public void AwardExperience(Player p)
-    {
-        if (playersInExpRange == 1)
-            p.totalExperience += experiencePool;
+    // public void AwardExperience(Player p)
+    // {
+    //     if (playersInExpRange == 1)
+    //         p.totalExperience += experiencePool;
         
-        if (playersInExpRange > 1)
-            p.totalExperience += ((experiencePool / playersInExpRange) + 5);
+    //     if (playersInExpRange > 1)
+    //         p.totalExperience += ((experiencePool / playersInExpRange) + 5);
         
         
-    }
+    // }
 }

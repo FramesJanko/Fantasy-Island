@@ -1,0 +1,23 @@
+{
+    "name": "FantasyIsland.Gameplay",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Transforms",
+        "Unity.NetCode",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

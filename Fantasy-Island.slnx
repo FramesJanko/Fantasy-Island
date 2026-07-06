@@ -1,4 +1,5 @@
 ﻿<Solution>
+  <Project Path="FantasyIsland.Gameplay.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>
