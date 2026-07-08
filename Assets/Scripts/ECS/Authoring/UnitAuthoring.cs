@@ -38,6 +38,7 @@ namespace FantasyIsland
                 AddComponent(entity, new AttackState());
                 AddComponent(entity, new TargetRef());
                 AddComponent(entity, new DistanceToTarget());
+                AddComponent(entity, new UnitName { Value = authoring.gameObject.name });
 
                 AddComponent(entity, new MoveDestination());
                 SetComponentEnabled<MoveDestination>(entity, false); // idle until commanded

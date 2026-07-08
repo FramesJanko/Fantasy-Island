@@ -1,6 +1,9 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
+using TMPro;
+using UnityEngine;
 
 namespace FantasyIsland
 {
@@ -44,7 +47,29 @@ namespace FantasyIsland
     /// The unit's current combat target (Entity.Null == none). Populated by AI/commands.
     public struct TargetRef : IComponentData
     {
-        public Entity Value;
+        [GhostField] public Entity Value;
+    }
+
+    /// Display name baked from the prefab's GameObject name. Same for every instance of
+    /// a given unit type, so it's static tuning data (like CombatStats) - no GhostField needed.
+    public struct UnitName : IComponentData
+    {
+        public FixedString64Bytes Value;
+    }
+
+    /// Cleanup component: survives entity destruction so NameplateCleanupSystem
+    /// gets a chance to destroy the GameObject before the entity is fully removed.
+    public struct NameplateView : ICleanupComponentData
+    {
+        public UnityObjectRef<Transform> Root;
+        public UnityObjectRef<TMP_Text> NameText;
+        public UnityObjectRef<TMP_Text> TargetText;
+    }
+    /// Singleton (baked once in the SubScene) pointing at the nameplate prefab
+    /// NameplateSpawnSystem instantiates per unit.
+    public struct NameplateConfig : IComponentData
+    {
+        public UnityObjectRef<GameObject> Prefab;
     }
 
     /// Cached distance to the current target, refreshed each server tick.
