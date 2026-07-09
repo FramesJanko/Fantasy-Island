@@ -2,8 +2,6 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.NetCode;
-using TMPro;
-using UnityEngine;
 
 namespace FantasyIsland
 {
@@ -55,21 +53,6 @@ namespace FantasyIsland
     public struct UnitName : IComponentData
     {
         public FixedString64Bytes Value;
-    }
-
-    /// Cleanup component: survives entity destruction so NameplateCleanupSystem
-    /// gets a chance to destroy the GameObject before the entity is fully removed.
-    public struct NameplateView : ICleanupComponentData
-    {
-        public UnityObjectRef<Transform> Root;
-        public UnityObjectRef<TMP_Text> NameText;
-        public UnityObjectRef<TMP_Text> TargetText;
-    }
-    /// Singleton (baked once in the SubScene) pointing at the nameplate prefab
-    /// NameplateSpawnSystem instantiates per unit.
-    public struct NameplateConfig : IComponentData
-    {
-        public UnityObjectRef<GameObject> Prefab;
     }
 
     /// Cached distance to the current target, refreshed each server tick.

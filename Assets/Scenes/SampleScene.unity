@@ -3248,6 +3248,7 @@ GameObject:
   - component: {fileID: 1064813753}
   - component: {fileID: 1064813752}
   - component: {fileID: 1064813756}
+  - component: {fileID: 1064813757}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -3377,6 +3378,21 @@ MonoBehaviour:
       m_Action: Send Host Message
       m_Flags: 0
     m_Flags: 0
+--- !u!114 &1064813757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1064813751}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: acc16075b5173544682e73db9887787b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: FantasyIsland.Gameplay::FantasyIsland.NameplateManager
+  NameplatePrefab: {fileID: -4562666068982047037, guid: 64c646d2fc6a4594288dd048dd6dd8d2, type: 3}
+  WorldCamera: {fileID: 0}
+  WorldOffset: {x: 0, y: 2, z: 0}
 --- !u!1 &1089506482
 GameObject:
   m_ObjectHideFlags: 0
