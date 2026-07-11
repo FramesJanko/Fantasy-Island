@@ -1,0 +1,95 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8299983616129117108
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 425951360432750862}
+  - component: {fileID: 7074966829729017506}
+  m_Layer: 0
+  m_Name: Network
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &425951360432750862
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8299983616129117108}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7074966829729017506
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8299983616129117108}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 667a29141738d2741b531c97015d7acf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkManager
+  serverIP: 127.0.0.1
+  port: 12555
+  udpPort: 12555
+  text: {fileID: 0}
+  position: {x: 0, y: 0, z: 0}
+  player_pos: {fileID: 0}
+  playerCharacter: {fileID: 0}
+  spacebar:
+    m_Name: Spacebar
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: fdc09a62-7673-421f-9350-9d78b0eeec67
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: b5aecba1-0dbc-45e7-b32a-3eee83815a25
+      m_Path: <Keyboard>/space
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Spacebar
+      m_Flags: 0
+    m_Flags: 0
+  localTextUpdate:
+    m_Name: Local Text Update
+    m_Type: 0
+    m_ExpectedControlType: 
+    m_Id: a63e0c1e-a769-42fc-a516-2ad0fda8f969
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: e5d5a9fb-163e-4cb9-beff-76cb85ca0b05
+      m_Path: <Keyboard>/h
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Local Text Update
+      m_Flags: 0
+    m_Flags: 0
+  lobbyName: {fileID: 0}
+  connectedToLobby: 0
+  connectedLobby: 
+  is_host: 0
+  host_number: 0
+  client_number: 0
+  lobbyList: []
+  serverMessageText: {fileID: 0}

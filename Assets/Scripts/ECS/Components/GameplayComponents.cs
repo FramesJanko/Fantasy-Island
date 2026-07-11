@@ -55,6 +55,13 @@ namespace FantasyIsland
         public FixedString64Bytes Value;
     }
 
+    [InternalBufferCapacity(8)]
+    public struct DistanceToPlayers : IBufferElementData
+    {
+        public Entity Player;       
+        public float Value;
+    }
+
     /// Cached distance to the current target, refreshed each server tick.
     public struct DistanceToTarget : IComponentData
     {

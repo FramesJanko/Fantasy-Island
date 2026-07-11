@@ -45,6 +45,7 @@ namespace FantasyIsland
 
                 AddComponent(entity, new PathCursor());
                 AddBuffer<PathWaypoint>(entity);
+                AddBuffer<DistanceToPlayers>(entity);
 
                 AddComponent<UnitTag>(entity);
             }
