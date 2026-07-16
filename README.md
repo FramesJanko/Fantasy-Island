@@ -16,3 +16,10 @@ Strength determines attack damage, health, and movement speed. Agility determine
 
 The players control one hero that starts at level 1. They can level up from experience, which is earned when units die. Exp is given to the killing blow.
 
+## The Map and Factions
+
+The game's map will be split into quadrants for now. factions exist in each quadrant. Borders will be a conflict between factions. all factions neutral to start with. Enemy units have a rank associated with them, rank 1, 2, 3, 4 (elite). 
+
+Higher rank (2 higher than 1) will give more exp. 
+
+Try out two systems. One where the aided faction grows tougher. one where the hurt faction grows tougher.
