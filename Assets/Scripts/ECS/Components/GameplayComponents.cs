@@ -22,14 +22,13 @@ namespace FantasyIsland
     // Shared unit state
     // -----------------------------------------------------------------------
 
-    /// Replicated health. Current is a ghost field so clients see damage/heals.
     public struct Health : IComponentData
     {
-        public float Max;
-        [GhostField] public float Current;
+        [GhostField]public float Max;
+        [GhostField]public float Current;
+        [GhostField]public bool Dead;
     }
 
-    /// Movement speed in units/second (server-authoritative movement).
     public struct MoveSpeed : IComponentData
     {
         public float Value;
@@ -43,7 +42,7 @@ namespace FantasyIsland
     }
 
     /// The unit's current combat target (Entity.Null == none). Populated by AI/commands.
-    public struct TargetRef : IComponentData
+    public struct TargetRef : IComponentData, IEnableableComponent
     {
         [GhostField] public Entity Value;
     }
@@ -71,17 +70,17 @@ namespace FantasyIsland
     /// Static combat tuning baked from authoring.
     public struct CombatStats : IComponentData
     {
-        public float BaseRange;
-        public float AttackRange;
-        public float Damage;
-        public float AttackTime;
+        [GhostField] public float BaseRange;
+        [GhostField] public float AttackRange;
+        [GhostField] public float Damage;
+        [GhostField] public float AttackTime;
     }
 
     /// Live attack progress (server-driven). Progress counts up to AttackTime.
     public struct AttackState : IComponentData
     {
-        public float Progress;
-        public bool Attacking;
+        [GhostField]public float Progress;
+        public bool AttackSucceeded;
     }
 
     /// NPC behaviour tuning + leash anchor. Home is set at spawn time.
@@ -89,7 +88,20 @@ namespace FantasyIsland
     {
         public float3 Home;
         public float HuntingDistance;
+        public float AggroRange;
         public float LeashRange;
+    }
+
+    public struct UnitMode : IComponentData
+    {
+        public enum Mode
+        {
+            Idle,
+            Moving,
+            Attacking
+        }
+
+        [GhostField]public Mode CurrentMode;
     }
 
     // -----------------------------------------------------------------------
@@ -141,5 +153,14 @@ namespace FantasyIsland
     public struct MoveCommandRpc : IRpcCommand
     {
         public float3 Destination;
+    }
+
+    /// Client -> server "target this unit" command. Carries the clicked ghost's networked
+    /// id (resolved client-side from GhostInstance); the server maps it back to a server
+    /// entity and points the sender's owned unit at it. Ghost ids are stable across the
+    /// wire, unlike Entity, which is only valid within the world it came from.
+    public struct SetTargetCommandRpc : IRpcCommand
+    {
+        public int TargetGhostId;
     }
 }

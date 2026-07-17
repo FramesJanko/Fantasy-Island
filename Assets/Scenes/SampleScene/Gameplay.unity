@@ -242,7 +242,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: FantasyIsland.Gameplay::FantasyIsland.GameSpawnerAuthoring
   playerPrefab: {fileID: 4056653038058288167, guid: 5fa21c50e9e2b5b429833fefee11c7df, type: 3}
-  npcPrefab: {fileID: 5601889483409083622, guid: d7f4ef62c9c442644af1c07774a3cc41, type: 3}
+  npcPrefab: {fileID: 4494965466069885178, guid: 51e38a7b028687041990639a51754179, type: 3}
   npcSpawnPoints:
   - {fileID: 204821600}
   - {fileID: 204749112}

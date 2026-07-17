@@ -14,6 +14,9 @@ namespace FantasyIsland
         [Tooltip("If the NPC strays further than this from home, it returns and drops its target.")]
         public float leashRange = 20f;
 
+        [Tooltip("If the NPC strays further than this from home, it returns and drops its target.")]
+        public float aggroRange = 20f;
+
         class NpcBaker : Baker<NpcAuthoring>
         {
             public override void Bake(NpcAuthoring authoring)
@@ -23,7 +26,8 @@ namespace FantasyIsland
                 AddComponent(entity, new NpcAi
                 {
                     HuntingDistance = authoring.huntingDistance,
-                    LeashRange = authoring.leashRange
+                    LeashRange = authoring.leashRange,
+                    AggroRange = authoring.aggroRange
                     // Home is set when the NPC is spawned.
                 });
             }

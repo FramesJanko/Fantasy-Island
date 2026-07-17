@@ -20,8 +20,8 @@ namespace FantasyIsland
             float dt = SystemAPI.Time.DeltaTime;
             var ecb = new EntityCommandBuffer(Allocator.Temp);
 
-            foreach (var (transform, speed, waypoints, cursor, entity) in SystemAPI
-                         .Query<RefRW<LocalTransform>, RefRO<MoveSpeed>, DynamicBuffer<PathWaypoint>, RefRW<PathCursor>>()
+            foreach (var (transform, speed, waypoints, cursor, mode, entity) in SystemAPI
+                         .Query<RefRW<LocalTransform>, RefRO<MoveSpeed>, DynamicBuffer<PathWaypoint>, RefRW<PathCursor>, RefRW<UnitMode>>()
                          .WithAll<MoveDestination>() // enabled == moving
                          .WithEntityAccess())
             {
@@ -41,6 +41,7 @@ namespace FantasyIsland
                 {
                     if (index + 1 >= waypoints.Length)
                     {
+                        mode.ValueRW.CurrentMode = UnitMode.Mode.Idle;
                         ecb.SetComponentEnabled<MoveDestination>(entity, false); // arrived
                     }
                     else
@@ -49,7 +50,7 @@ namespace FantasyIsland
                     }
                     continue;
                 }
-
+                mode.ValueRW.CurrentMode = UnitMode.Mode.Moving;
                 float3 direction = toTarget / distance;
                 float step = math.min(speed.ValueRO.Value * dt, distance);
                 transform.ValueRW.Position = position + direction * step;

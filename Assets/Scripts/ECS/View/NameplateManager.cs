@@ -24,8 +24,11 @@ namespace FantasyIsland
         [Tooltip("Camera used to project world positions to screen. Defaults to Camera.main.")]
         public Camera WorldCamera;
 
-        [Tooltip("World-space offset above the unit's transform where the nameplate sits.")]
+        [Tooltip("World-space offset from the unit's transform where the nameplate anchors (use Y to sit above the head).")]
         public Vector3 WorldOffset = new Vector3(0f, 2f, 0f);
+
+        [Tooltip("Screen-space pixel offset applied after projection. X = right, Y = up. Camera-angle independent.")]
+        public Vector2 ScreenOffset = new Vector2(0f, 0f);
 
         World _clientWorld;
         EntityQuery _unitQuery;
@@ -82,12 +85,20 @@ namespace FantasyIsland
                     continue;
                 }
 
+                screen.x += ScreenOffset.x;
+                screen.y += ScreenOffset.y;
+
                 element.SetVisible(true);
                 element.SetScreenPosition(screen);
                 element.SetName(names[i].Value.ToString());
 
                 var targetEntity = targets[i].Value;
                 bool hasTarget = em.Exists(targetEntity) && em.HasComponent<UnitName>(targetEntity);
+                bool hasHealth = em.Exists(entity) && em.HasComponent<Health>(entity);
+                bool hasAttackState = em.Exists(entity) && em.HasComponent<AttackState>(entity);
+                bool hasCombat = em.Exists(entity) && em.HasComponent<CombatStats>(entity);
+                if (hasHealth) element.SetHealth(em.GetComponentData<Health>(entity).Current/em.GetComponentData<Health>(entity).Max);
+                if (hasAttackState && hasCombat) element.SetAttackProgress(em.GetComponentData<AttackState>(entity).Progress/em.GetComponentData<CombatStats>(entity).AttackTime);
                 element.SetTarget(hasTarget
                     ? em.GetComponentData<UnitName>(targetEntity).Value.ToString()
                     : "-");

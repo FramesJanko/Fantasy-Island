@@ -1,0 +1,30 @@
+{
+    "name": "FantasyIsland.Networking",
+    "rootNamespace": "FantasyIsland.Networking",
+    "references": [
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Scenes",
+        "Unity.Transforms",
+        "Unity.NetCode",
+        "Unity.Networking.Transport",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Burst",
+        "FantasyIsland.Gameplay",
+        "Unity.Services.Core",
+        "Unity.Services.Authentication",
+        "Unity.Services.Multiplayer",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

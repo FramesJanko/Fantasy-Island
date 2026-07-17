@@ -40,6 +40,14 @@ namespace FantasyIsland
                     {
                         SystemAPI.GetComponentRW<MoveDestination>(player).ValueRW.Value = rpc.ValueRO.Destination;
                         ecb.SetComponentEnabled<MoveDestination>(player, true);
+
+                        // A manual move cancels any combat target, otherwise
+                        // UnitSetMoveDestinationSystem would override this destination with
+                        // the target's position on the next tick and the unit couldn't leave.
+                        if (SystemAPI.HasComponent<TargetRef>(player))
+                        {
+                            SystemAPI.GetComponentRW<TargetRef>(player).ValueRW.Value = Entity.Null;
+                        }
                     }
                 }
                 ecb.DestroyEntity(requestEntity); // consume the request
