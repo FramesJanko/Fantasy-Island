@@ -1,38 +1,200 @@
+using System.Collections.Generic;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.NetCode;
+using Unity.Transforms;
+using UnityEngine;
 
 namespace FantasyIsland
 {
-    /// Server-only: turns a unit's MoveDestination into a path of waypoints.
+    /// Server-only: turns a unit's MoveDestination into a path of waypoints by calling
+    /// into the managed A* pathfinder (Grid / Pathfinding / PathRequestManager on a scene
+    /// GameObject). MovementSystem is agnostic to how the buffer got filled.
     ///
-    /// v1 is "direct steering": the path is just the destination itself (one waypoint).
-    /// This is the single seam where A* plugs in (M4): replace the buffer-fill below
-    /// with a call into the managed pathfinder to produce a real multi-waypoint route.
-    /// MovementSystem is agnostic to which one filled the buffer.
+    /// The A* pathfinder is async (coroutine + callback), so this is a managed SystemBase
+    /// rather than a Burst ISystem: it holds the in-flight bookkeeping and receives the
+    /// callbacks. On a new destination it fills a single *direct* waypoint immediately so
+    /// the unit starts moving with zero latency, then replaces it with the real route when
+    /// the callback lands (typically next frame). If no A* object is in the scene, or a
+    /// path can't be found, it degrades to that same direct-steering behaviour.
     [WorldSystemFilter(WorldSystemFilterFlags.ServerSimulation)]
     [UpdateBefore(typeof(MovementSystem))]
-    partial struct PathRequestSystem : ISystem
+    public partial class PathRequestSystem : SystemBase
     {
-        public void OnUpdate(ref SystemState state)
+        // Re-request a path only once the destination has moved at least this far from
+        // what we last pathed to. Keeps chasing a moving target from spamming A* every tick.
+        const float k_RepathThreshold = 1f;
+
+        // Draw each moving unit's remaining route with Debug.DrawLine (Scene view always,
+        // Game view with Gizmos on). Green == a real A* route, yellow == direct fallback.
+        const bool k_DrawPaths = true;
+
+        // Destination we last requested a path toward, per unit (keyed by Entity, whose
+        // version guards against destroyed-then-recycled entities matching stale entries).
+        readonly Dictionary<Entity, float3> _lastRequested = new();
+
+        // Units with an A* request currently in flight (one at a time each).
+        readonly HashSet<Entity> _pending = new();
+
+        // Whether each unit's current buffer is a real A* route (true) or the direct
+        // fallback (false). Drives the path visualization colour.
+        readonly Dictionary<Entity, bool> _isAstarRoute = new();
+
+        // Completed paths, delivered from the A* callback, drained on the next update.
+        readonly Queue<PathResult> _results = new();
+
+        struct PathResult
         {
-            // MoveDestination is enableable; including it in the query matches only
-            // units that currently have somewhere to go.
-            foreach (var (dest, waypoints, cursor) in SystemAPI
-                         .Query<RefRO<MoveDestination>, DynamicBuffer<PathWaypoint>, RefRW<PathCursor>>())
+            public Entity Entity;
+            public float3 Target;      // exact destination we pathed to (appended for a precise stop)
+            public Vector3[] Waypoints;
+            public bool Success;
+        }
+
+        protected override void OnUpdate()
+        {
+            ApplyCompletedPaths();
+
+            foreach (var (dest, transform, waypoints, cursor, entity) in SystemAPI
+                         .Query<RefRO<MoveDestination>, RefRO<LocalTransform>, DynamicBuffer<PathWaypoint>, RefRW<PathCursor>>()
+                         .WithEntityAccess())
             {
                 float3 target = dest.ValueRO.Value;
-                bool alreadyPathed = waypoints.Length > 0 &&
-                                     waypoints[waypoints.Length - 1].Position.Equals(target);
-                if (alreadyPathed)
+
+                // Already waiting on a path for this unit — let it finish.
+                if (_pending.Contains(entity))
                 {
                     continue;
                 }
 
-                waypoints.Clear();
-                waypoints.Add(new PathWaypoint { Position = target }); // v1: single waypoint
-                cursor.ValueRW.Index = 0;
+                // Already pathed to (roughly) here and still have a route — nothing to do.
+                if (waypoints.Length > 0 &&
+                    _lastRequested.TryGetValue(entity, out var last) &&
+                    math.distancesq(last, target) < k_RepathThreshold * k_RepathThreshold)
+                {
+                    continue;
+                }
+
+                _lastRequested[entity] = target;
+
+                if (!PathRequestManager.IsReady)
+                {
+                    // No A* object in the scene - direct steering is the only option.
+                    waypoints.Clear();
+                    waypoints.Add(new PathWaypoint { Position = target });
+                    cursor.ValueRW.Index = 0;
+                    _isAstarRoute[entity] = false;
+                    continue;
+                }
+
+                // Only beeline when the unit has no route at all (a fresh command): it moves
+                // straight at the target for the one frame until the A* result lands, so there
+                // is zero input latency. If it is already following a route (e.g. chasing a
+                // moving target and re-pathing), keep steering that route until the new path
+                // arrives - otherwise it would briefly cut a straight line through a wall.
+                if (waypoints.Length == 0)
+                {
+                    waypoints.Add(new PathWaypoint { Position = target });
+                    cursor.ValueRW.Index = 0;
+                    _isAstarRoute[entity] = false;
+                }
+
+                float3 start = transform.ValueRO.Position;
+                Entity requester = entity;
+                _pending.Add(requester);
+                PathRequestManager.RequestPath(
+                    (Vector3)start,
+                    (Vector3)target,
+                    (path, success) => _results.Enqueue(new PathResult
+                    {
+                        Entity = requester,
+                        Target = target,
+                        Waypoints = path,
+                        Success = success,
+                    }));
             }
+
+            if (k_DrawPaths)
+            {
+                DrawPaths();
+            }
+        }
+
+        void ApplyCompletedPaths()
+        {
+            while (_results.Count > 0)
+            {
+                var result = _results.Dequeue();
+                _pending.Remove(result.Entity);
+
+                if (!EntityManager.Exists(result.Entity) ||
+                    !EntityManager.HasBuffer<PathWaypoint>(result.Entity))
+                {
+                    _lastRequested.Remove(result.Entity);
+                    _isAstarRoute.Remove(result.Entity);
+                    continue;
+                }
+
+                // A* couldn't reach the target (even after snapping endpoints to walkable
+                // nodes): leave the unit on whatever route it's already following rather than
+                // overwriting it with a straight line that cuts through obstacles.
+                if (!result.Success || result.Waypoints == null || result.Waypoints.Length == 0)
+                {
+                    _isAstarRoute[result.Entity] = false;
+                    continue;
+                }
+
+                _isAstarRoute[result.Entity] = true;
+
+                var buffer = EntityManager.GetBuffer<PathWaypoint>(result.Entity);
+                buffer.Clear();
+                foreach (var wp in result.Waypoints)
+                {
+                    buffer.Add(new PathWaypoint { Position = wp });
+                }
+
+                // Always finish on the exact clicked point: A* turn-points sit at node
+                // centres, so without this the unit stops short of where it was told to go.
+                buffer.Add(new PathWaypoint { Position = result.Target });
+
+                EntityManager.SetComponentData(result.Entity, new PathCursor { Index = 0 });
+            }
+        }
+
+        /// Draws each moving unit's remaining route: a line from the unit through every
+        /// waypoint it has yet to reach, plus an X at each waypoint. Green == A* route,
+        /// yellow == direct fallback (no A* object, or A* couldn't reach the target).
+        void DrawPaths()
+        {
+            foreach (var (transform, waypoints, cursor, entity) in SystemAPI
+                         .Query<RefRO<LocalTransform>, DynamicBuffer<PathWaypoint>, RefRO<PathCursor>>()
+                         .WithAll<MoveDestination>() // enabled == currently moving
+                         .WithEntityAccess())
+            {
+                if (waypoints.Length == 0)
+                {
+                    continue;
+                }
+
+                Color color = _isAstarRoute.TryGetValue(entity, out var astar) && astar
+                    ? Color.green
+                    : Color.yellow;
+
+                float3 previous = transform.ValueRO.Position;
+                for (int i = math.clamp(cursor.ValueRO.Index, 0, waypoints.Length - 1); i < waypoints.Length; i++)
+                {
+                    float3 point = waypoints[i].Position;
+                    Debug.DrawLine(previous, point, color);
+                    DrawMarker(point, color);
+                    previous = point;
+                }
+            }
+        }
+
+        static void DrawMarker(float3 p, Color color)
+        {
+            const float s = 0.3f;
+            Debug.DrawLine(p + new float3(-s, 0f, -s), p + new float3(s, 0f, s), color);
+            Debug.DrawLine(p + new float3(-s, 0f, s), p + new float3(s, 0f, -s), color);
         }
     }
 }

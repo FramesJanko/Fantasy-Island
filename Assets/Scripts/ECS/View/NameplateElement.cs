@@ -12,6 +12,11 @@ namespace FantasyIsland
 
         [Tooltip("Text showing the unit's current target name (or '-').")]
         public TMP_Text TargetText;
+        [Tooltip("Healthbar value for unit's current  health.")]
+        public float Health;
+        [Tooltip("Value for unit's attack progress shown via slider.")]
+        public float AttackSlider;
+
 
         RectTransform _rect;
 
@@ -25,6 +30,15 @@ namespace FantasyIsland
         public void SetTarget(string value)
         {
             if (TargetText != null) TargetText.text = value;
+        }
+
+        public void SetHealth(float value)
+        {
+            Health = value;
+        }
+        public void SetAttackProgress(float value)
+        {
+            AttackSlider = value;
         }
 
         /// Screen-pixel position (from Camera.WorldToScreenPoint). Works with a

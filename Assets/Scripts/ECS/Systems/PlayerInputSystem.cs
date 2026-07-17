@@ -32,7 +32,22 @@ namespace FantasyIsland
             }
 
             var ray = cam.ScreenPointToRay(mouse.position.ReadValue());
-            if (!Physics.Raycast(ray, out var hit, 1000f))
+
+            // Right-click a unit -> target it. The pick manager stands up transient proxy
+            // colliders only for this raycast, so we get the clicked entity's ghost id back.
+            var picker = UnitPickManager.Instance;
+            if (picker != null && picker.TryPick(ray, out _, out var targetGhostId))
+            {
+                var targetRequest = EntityManager.CreateEntity();
+                EntityManager.AddComponentData(targetRequest, new SetTargetCommandRpc { TargetGhostId = targetGhostId });
+                EntityManager.AddComponentData(targetRequest, new SendRpcCommandRequest());
+                return;
+            }
+
+            // Otherwise right-click the ground -> move there. Exclude the pick layer so this
+            // ray can never catch a stray proxy collider.
+            int groundMask = picker != null && picker.HasPickLayer ? ~picker.PickLayerMask : ~0;
+            if (!Physics.Raycast(ray, out var hit, 1000f, groundMask))
             {
                 return;
             }

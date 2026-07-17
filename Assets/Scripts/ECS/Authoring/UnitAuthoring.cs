@@ -36,6 +36,7 @@ namespace FantasyIsland
                     AttackTime = authoring.attackTime
                 });
                 AddComponent(entity, new AttackState());
+                AddComponent(entity, new UnitMode {CurrentMode = UnitMode.Mode.Idle});
                 AddComponent(entity, new TargetRef());
                 AddComponent(entity, new DistanceToTarget());
                 AddComponent(entity, new UnitName { Value = authoring.gameObject.name });
