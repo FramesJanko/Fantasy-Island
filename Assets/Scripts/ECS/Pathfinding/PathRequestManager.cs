@@ -10,18 +10,26 @@ public class PathRequestManager : MonoBehaviour {
 
 	static PathRequestManager instance;
 	Pathfinding pathfinding;
+	Grid grid;
 
 	bool isProcessingPath;
 
 	void Awake() {
 		instance = this;
 		pathfinding = GetComponent<Pathfinding>();
+		grid = GetComponent<Grid>();
 	}
 
 	/// True once an instance exists in the scene. Lets non-MonoBehaviour callers
 	/// (e.g. the ECS PathRequestSystem) fall back gracefully when A* isn't set up.
 	public static bool IsReady {
 		get { return instance != null; }
+	}
+
+	/// True when a straight line from start to end is clear of unwalkable terrain, so the
+	/// caller can steer directly and skip the A* request entirely.
+	public static bool IsDirectPathClear(Vector3 start, Vector3 end) {
+		return instance != null && instance.grid != null && instance.grid.HasClearLine(start, end);
 	}
 
 	public static void RequestPath(Vector3 pathStart, Vector3 pathEnd, Action<Vector3[], bool> callback) {

@@ -152,6 +152,26 @@ public class Grid : MonoBehaviour {
 		return grid[x,y];
 	}
 
+	// True when a straight line from start to end is unobstructed by unwalkable terrain,
+	// so the caller can steer directly instead of running A*. Uses a sphere of nodeRadius
+	// (the same inflation the grid bakes walkability at) so the mover can't clip a corner.
+	public bool HasClearLine(Vector3 start, Vector3 end) {
+		// If either endpoint is on unwalkable terrain, don't allow a direct line. A start
+		// overlapping an obstacle can slip past the SphereCast below (casts ignore initial
+		// overlaps), and a destination inside a wall would be walked straight into. Force A*
+		// instead - it snaps both endpoints to the nearest walkable nodes.
+		if (!NodeFromWorldPoint(start).walkable || !NodeFromWorldPoint(end).walkable) {
+			return false;
+		}
+
+		Vector3 delta = end - start;
+		float distance = delta.magnitude;
+		if (distance < 0.0001f) {
+			return true;
+		}
+		return !Physics.SphereCast(start, nodeRadius, delta / distance, out _, distance, unwalkableMask);
+	}
+
 	// Nearest walkable node to the given one, searched outward ring by ring (BFS).
 	// A unit hugging a wall - or a click on/near an obstacle - lands on an unwalkable
 	// node; snapping to the closest walkable one lets A* still produce a route around

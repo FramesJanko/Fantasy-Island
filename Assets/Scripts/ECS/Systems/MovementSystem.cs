@@ -42,6 +42,12 @@ namespace FantasyIsland
                     if (index + 1 >= waypoints.Length)
                     {
                         mode.ValueRW.CurrentMode = UnitMode.Mode.Idle;
+                        // Clear the consumed route on arrival. If left in place, the next move
+                        // command re-enables MoveDestination while the cursor still sits on this
+                        // already-reached final waypoint, so MovementSystem "arrives" instantly
+                        // and disables it again - swallowing the command regardless of distance.
+                        waypoints.Clear();
+                        cursor.ValueRW.Index = 0;
                         ecb.SetComponentEnabled<MoveDestination>(entity, false); // arrived
                     }
                     else

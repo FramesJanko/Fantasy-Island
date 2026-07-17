@@ -26,7 +26,7 @@ namespace FantasyIsland
 
         // Draw each moving unit's remaining route with Debug.DrawLine (Scene view always,
         // Game view with Gizmos on). Green == a real A* route, yellow == direct fallback.
-        const bool k_DrawPaths = true;
+        const bool k_DrawPaths = false;
 
         // Destination we last requested a path toward, per unit (keyed by Entity, whose
         // version guards against destroyed-then-recycled entities matching stale entries).
@@ -75,10 +75,14 @@ namespace FantasyIsland
                 }
 
                 _lastRequested[entity] = target;
+                float3 start = transform.ValueRO.Position;
 
-                if (!PathRequestManager.IsReady)
+                // Steer straight when A* isn't set up, or when nothing unwalkable lies between
+                // the unit and its destination - no point routing around obstacles that aren't
+                // there, and it avoids the async A* round-trip entirely.
+                if (!PathRequestManager.IsReady ||
+                    PathRequestManager.IsDirectPathClear((Vector3)start, (Vector3)target))
                 {
-                    // No A* object in the scene - direct steering is the only option.
                     waypoints.Clear();
                     waypoints.Add(new PathWaypoint { Position = target });
                     cursor.ValueRW.Index = 0;
@@ -86,11 +90,11 @@ namespace FantasyIsland
                     continue;
                 }
 
-                // Only beeline when the unit has no route at all (a fresh command): it moves
-                // straight at the target for the one frame until the A* result lands, so there
-                // is zero input latency. If it is already following a route (e.g. chasing a
-                // moving target and re-pathing), keep steering that route until the new path
-                // arrives - otherwise it would briefly cut a straight line through a wall.
+                // An obstacle is in the way - request an A* route. Only beeline when the unit
+                // has no route at all (a fresh command): it moves straight at the target for the
+                // one frame until the result lands, so there's zero input latency. If it's
+                // already following a route (e.g. chasing and re-pathing), keep steering that
+                // one until the new path arrives - otherwise it would briefly cut through a wall.
                 if (waypoints.Length == 0)
                 {
                     waypoints.Add(new PathWaypoint { Position = target });
@@ -98,7 +102,6 @@ namespace FantasyIsland
                     _isAstarRoute[entity] = false;
                 }
 
-                float3 start = transform.ValueRO.Position;
                 Entity requester = entity;
                 _pending.Add(requester);
                 PathRequestManager.RequestPath(
