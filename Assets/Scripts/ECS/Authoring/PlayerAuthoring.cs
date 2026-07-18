@@ -8,12 +8,15 @@ namespace FantasyIsland
     /// server stamps with the connecting client's NetworkId in PlayerSpawnSystem.
     public class PlayerAuthoring : MonoBehaviour
     {
+
+        public float spawnTimer = 5f;
         class PlayerBaker : Baker<PlayerAuthoring>
         {
             public override void Bake(PlayerAuthoring authoring)
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
                 AddComponent<PlayerTag>(entity);
+                AddComponent(entity, new SpawnStatus { BaseSpawnTimer = authoring.spawnTimer });
             }
         }
     }

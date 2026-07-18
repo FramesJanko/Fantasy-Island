@@ -88,10 +88,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: FantasyIsland.Gameplay::FantasyIsland.UnitAuthoring
   maxHealth: 100
   moveSpeed: 3
+  startingLevel: 1
+  experienceAward: 25
   baseAttackRange: 1.5
   attackRange: 4
-  damage: 20
-  attackTime: 1.3
+  baseDamage: 20
+  baseAttackTime: 1.3
+  strength: 3
+  agility: 3
+  intelligence: 3
 --- !u!114 &2438995839994112499
 MonoBehaviour:
   m_ObjectHideFlags: 0

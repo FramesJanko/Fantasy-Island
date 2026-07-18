@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.NetCode;
+using UnityEngine;
 
 namespace FantasyIsland
 {
@@ -38,15 +40,19 @@ namespace FantasyIsland
                     int senderId = SystemAPI.GetComponent<NetworkId>(source).Value;
                     if (owners.TryGetValue(senderId, out var player))
                     {
-                        SystemAPI.GetComponentRW<MoveDestination>(player).ValueRW.Value = rpc.ValueRO.Destination;
-                        ecb.SetComponentEnabled<MoveDestination>(player, true);
-
-                        // A manual move cancels any combat target, otherwise
-                        // UnitSetMoveDestinationSystem would override this destination with
-                        // the target's position on the next tick and the unit couldn't leave.
-                        if (SystemAPI.HasComponent<TargetRef>(player))
+                        Health health = SystemAPI.GetComponentRO<Health>(player).ValueRO;
+                        if (!health.Dead)
                         {
-                            SystemAPI.GetComponentRW<TargetRef>(player).ValueRW.Value = Entity.Null;
+                            SystemAPI.GetComponentRW<MoveDestination>(player).ValueRW.Value = rpc.ValueRO.Destination;
+                            ecb.SetComponentEnabled<MoveDestination>(player, true);
+
+                            // A manual move cancels any combat target, otherwise
+                            // UnitSetMoveDestinationSystem would override this destination with
+                            // the target's position on the next tick and the unit couldn't leave.
+                            if (SystemAPI.HasComponent<TargetRef>(player))
+                            {
+                                SystemAPI.GetComponentRW<TargetRef>(player).ValueRW.Value = Entity.Null;
+                            }
                         }
                     }
                 }

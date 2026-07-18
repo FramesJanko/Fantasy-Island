@@ -24,14 +24,28 @@ namespace FantasyIsland
 
     public struct Health : IComponentData
     {
+        [GhostField]public float BaseHp;
         [GhostField]public float Max;
         [GhostField]public float Current;
         [GhostField]public bool Dead;
     }
+    public struct UnitLevel : IComponentData
+    {
+        [GhostField]public int Value;
+    }
+    [GhostComponent(OwnerSendType = SendToOwnerType.SendToOwner)]
+    public struct Experience : IComponentData
+    {
+        [GhostField]public int TotalExperience;
+        /// How much experience this unit grants when it dies, split evenly among nearby
+        /// Experience holders by UnitDeathSystem.
+        public int Award;
+    }
 
     public struct MoveSpeed : IComponentData
     {
-        public float Value;
+        public float BaseMovespeed;
+        [GhostField]public float Movespeed;
     }
 
     /// The unit's current move destination. Enableable: enabled == "has somewhere to go".
@@ -73,7 +87,12 @@ namespace FantasyIsland
         [GhostField] public float BaseRange;
         [GhostField] public float AttackRange;
         [GhostField] public float Damage;
+        [GhostField] public float BaseDamage;
         [GhostField] public float AttackTime;
+        [GhostField] public float BaseAttackTime;
+        [GhostField] public float Strength;
+        [GhostField] public float Agility;
+        [GhostField] public float Intelligence;
     }
 
     /// Live attack progress (server-driven). Progress counts up to AttackTime.
@@ -90,6 +109,12 @@ namespace FantasyIsland
         public float HuntingDistance;
         public float AggroRange;
         public float LeashRange;
+    }
+    public struct SpawnStatus : IComponentData
+    {
+        public float BaseSpawnTimer;
+        [GhostField]public float SpawnTimer;
+        public int DeathCount;
     }
 
     public struct UnitMode : IComponentData

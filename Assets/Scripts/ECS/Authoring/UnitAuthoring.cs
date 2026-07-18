@@ -14,11 +14,18 @@ namespace FantasyIsland
         [Header("Movement")]
         public float moveSpeed = 5f;
 
+        [Header("Experience")]
+        public int startingLevel = 1;
+        public int experienceAward = 25;
+
         [Header("Combat")]
         public float baseAttackRange = 2f;
         public float attackRange = 2.5f;
-        public float damage = 10f;
-        public float attackTime = 1f;
+        public float baseDamage = 10f;
+        public float baseAttackTime = 1f;
+        public float strength = 1f;
+        public float agility = 1f;
+        public float intelligence= 1f;
 
         class UnitBaker : Baker<UnitAuthoring>
         {
@@ -26,15 +33,21 @@ namespace FantasyIsland
             {
                 var entity = GetEntity(TransformUsageFlags.Dynamic);
 
-                AddComponent(entity, new Health { Max = authoring.maxHealth, Current = authoring.maxHealth });
-                AddComponent(entity, new MoveSpeed { Value = authoring.moveSpeed });
+                AddComponent(entity, new Health { BaseHp = authoring.maxHealth, Max = authoring.maxHealth, Current = authoring.maxHealth });
+                AddComponent(entity, new MoveSpeed { BaseMovespeed = authoring.moveSpeed });
                 AddComponent(entity, new CombatStats
                 {
                     BaseRange = authoring.baseAttackRange,
                     AttackRange = authoring.attackRange,
-                    Damage = authoring.damage,
-                    AttackTime = authoring.attackTime
+                    Damage = authoring.baseDamage,
+                    BaseAttackTime = authoring.baseAttackTime,
+                    AttackTime = authoring.baseAttackTime,
+                    Strength = authoring.strength,
+                    Agility = authoring.agility,
+                    Intelligence = authoring.intelligence
                 });
+                AddComponent(entity, new UnitLevel { Value = authoring.startingLevel });
+                AddComponent(entity, new Experience { Award = authoring.experienceAward });
                 AddComponent(entity, new AttackState());
                 AddComponent(entity, new UnitMode {CurrentMode = UnitMode.Mode.Idle});
                 AddComponent(entity, new TargetRef());

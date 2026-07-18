@@ -58,7 +58,7 @@ namespace FantasyIsland
                 }
                 mode.ValueRW.CurrentMode = UnitMode.Mode.Moving;
                 float3 direction = toTarget / distance;
-                float step = math.min(speed.ValueRO.Value * dt, distance);
+                float step = math.min(speed.ValueRO.Movespeed* dt, distance);
                 transform.ValueRW.Position = position + direction * step;
                 transform.ValueRW.Rotation = quaternion.LookRotationSafe(direction, math.up());
             }

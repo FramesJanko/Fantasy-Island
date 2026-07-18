@@ -18,8 +18,8 @@ namespace FantasyIsland
             float dt = SystemAPI.Time.DeltaTime;
             _healthLookup.Update(ref state);
 
-            foreach(var (distance, target, combat, mode, attack, entity) in SystemAPI
-                    .Query<RefRO<DistanceToTarget>, RefRO<TargetRef>, RefRO<CombatStats>, RefRW<UnitMode>, RefRW<AttackState>>()
+            foreach(var (distance, target, combat, mode, attack, health, entity) in SystemAPI
+                    .Query<RefRO<DistanceToTarget>, RefRO<TargetRef>, RefRO<CombatStats>, RefRW<UnitMode>, RefRW<AttackState>, RefRO<Health>>()
                     .WithEntityAccess())
             {
                 if(target.ValueRO.Value == Entity.Null)
@@ -28,7 +28,7 @@ namespace FantasyIsland
                     continue;
 
                 }
-                if(distance.ValueRO.Value <= combat.ValueRO.BaseRange)
+                if(!health.ValueRO.Dead && distance.ValueRO.Value <= combat.ValueRO.BaseRange)
                 {
                     mode.ValueRW.CurrentMode = UnitMode.Mode.Attacking;
                     SystemAPI.SetComponentEnabled<MoveDestination>(entity, false);
