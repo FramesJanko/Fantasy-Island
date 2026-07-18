@@ -39,7 +39,7 @@ namespace FantasyIsland
                 {
                     BaseRange = authoring.baseAttackRange,
                     AttackRange = authoring.attackRange,
-                    Damage = authoring.baseDamage,
+                    BaseDamage = authoring.baseDamage,
                     BaseAttackTime = authoring.baseAttackTime,
                     AttackTime = authoring.baseAttackTime,
                     Strength = authoring.strength,
