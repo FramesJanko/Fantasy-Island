@@ -46,6 +46,9 @@ namespace FantasyIsland
                     Agility = authoring.agility,
                     Intelligence = authoring.intelligence
                 });
+                AddComponent(entity, new AbilityPoints());
+                AddComponent(entity, new SkillPoints());
+                AddComponent(entity, new LeveledUp());
                 AddComponent(entity, new UnitLevel { Value = authoring.startingLevel });
                 AddComponent(entity, new Experience { Award = authoring.experienceAward });
                 AddComponent(entity, new AttackState());

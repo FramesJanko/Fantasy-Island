@@ -29,9 +29,14 @@ namespace FantasyIsland
         [GhostField]public float Current;
         [GhostField]public bool Dead;
     }
+    public struct LeveledUp : IComponentData, IEnableableComponent
+    {
+        public int LevelsGained;
+    }
     public struct UnitLevel : IComponentData
     {
         [GhostField]public int Value;
+        [GhostField]public int NeededForLevel;
     }
     [GhostComponent(OwnerSendType = SendToOwnerType.SendToOwner)]
     public struct Experience : IComponentData
@@ -93,6 +98,16 @@ namespace FantasyIsland
         [GhostField] public float Strength;
         [GhostField] public float Agility;
         [GhostField] public float Intelligence;
+    }
+    [GhostComponent(OwnerSendType = SendToOwnerType.SendToOwner)]
+    public struct AbilityPoints : IComponentData, IEnableableComponent
+    {
+        [GhostField]public int Value;
+    }
+    [GhostComponent(OwnerSendType = SendToOwnerType.SendToOwner)]
+    public struct SkillPoints : IComponentData, IEnableableComponent
+    {
+        [GhostField]public int Value;
     }
 
     /// Live attack progress (server-driven). Progress counts up to AttackTime.
@@ -187,5 +202,13 @@ namespace FantasyIsland
     public struct SetTargetCommandRpc : IRpcCommand
     {
         public int TargetGhostId;
+    }
+    public struct SpendAbilityPointCommandRpc : IRpcCommand
+    {
+        public int Ability;
+    }
+    public struct SpendSkillPointCommandRpc : IRpcCommand
+    {
+        public int Skill;
     }
 }

@@ -18,7 +18,9 @@ namespace FantasyIsland
                 combat.ValueRW.Damage = combat.ValueRO.BaseDamage + combat.ValueRO.Strength;
                 combat.ValueRW.AttackTime = combat.ValueRO.BaseAttackTime * 25 / (25 + combat.ValueRO.Agility);
                 speed.ValueRW.Movespeed = speed.ValueRW.BaseMovespeed + (combat.ValueRO.Strength + combat.ValueRO.Agility)/25;
+                var old = health.ValueRO.Max;
                 health.ValueRW.Max = health.ValueRO.BaseHp + combat.ValueRO.Strength * 5;
+                if(health.ValueRO.Max != old) health.ValueRW.Current += health.ValueRO.Max - old;
             }
         }
     }
