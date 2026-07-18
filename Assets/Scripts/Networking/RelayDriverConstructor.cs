@@ -59,7 +59,26 @@ namespace FantasyIsland.Networking
                 DefaultDriverBuilder.RegisterClientDriver(world, ref driver, netDebug);
                 return;
             }
-            DefaultDriverBuilder.RegisterClientDriver(world, ref driver, netDebug, ref m_ClientData);
+
+            // Force the host's own local client onto a UDP *relay* socket driver, even
+            // though a server world already exists in this same process.
+            //
+            // Why not the default RegisterClientDriver(..., ref relayData)? Its internal
+            // ClientUseSocketDriver() check registers an IPC-only driver (and drops the
+            // relay params) whenever a server world is present in the process — the Host
+            // case. That IPC path only reaches the server in the Editor / development
+            // builds, because there the Network Simulator is force-enabled and that in
+            // turn forces a socket driver. In a *release* build the simulator branch is
+            // compiled out, so the client keeps the IPC driver and Connect() to the Relay
+            // endpoint collapses to loopback with the Relay port — which never matches the
+            // server's random IPC listen port. Result: the host's client never connects,
+            // no ghosts replicate, and no players/NPCs appear (works in Editor, not build).
+            //
+            // Registering the relay UDP driver explicitly makes the local client tunnel
+            // through Relay in every build, exactly like a remote joiner.
+            var settings = DefaultDriverBuilder.GetNetworkClientSettings();
+            settings.WithRelayParameters(ref m_ClientData);
+            DefaultDriverBuilder.RegisterClientUdpDriver(world, ref driver, netDebug, settings);
         }
     }
 }
